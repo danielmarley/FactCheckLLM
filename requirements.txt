@@ -1,0 +1,7 @@
+nest_asyncio
+langchain
+langchain-core
+langchain-community
+colab-xterm
+fuzzywuzzy
+nltk
