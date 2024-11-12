@@ -12,6 +12,9 @@
       "scripting",
       "activeTab"
     ],
+    "icons": {
+      "16": "content/hermes-icon.png"
+    },
     "background": {
       "service_worker": "js/background.js"
     },

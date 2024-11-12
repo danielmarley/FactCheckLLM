@@ -1,24 +1,38 @@
 function resetPage() {
-  $('span.claim').each(function() {
-    const originalText = $(this).data('excerpt');
-    $(this).replaceWith(originalText);
+  // $('span.claim').each(function() {
+  //   const originalText = $(this).data('excerpt');
+  //   $(this).replaceWith(originalText);
+  // });
+  $('[data-factcheckuntouched]').each(function() {
+    const originalInnerHtml = $(this).attr('data-factcheckuntouched');
+    $(this).removeAttr('data-factcheckuntouched')
+    $(this).html(originalInnerHtml);
   });
 }
 
 function processPassageResponse(excerptsWithClaims) {
-    excerptsWithClaims.forEach((item) => {
-    const { excerpt, claim } = item;
-
+  excerptsWithClaims.forEach((item) => {
+    const { excerpt, claim, label, reply } = item;
+    const claimClass = getClaimClass(label);
     // Use jQuery to highlight excerpts in the DOM
-    $("body").html((_, html) => {
-      const highlightHTML = `
-        <span class="claim" data-excerpt="${excerpt}" data-claim="${claim}">
-          ${excerpt}
-        </span>
-      `;
-      const excerptRegex = new RegExp(excerpt, 'g');
-      return html.replace(excerptRegex, highlightHTML);
-    });
+    const claimDiv = $(`*:contains("${excerpt}")`)
+      .not('script')
+      .not('head')
+      .not('link')
+      .last();
+    const textContent = claimDiv[0].textContent;
+
+    // claimDiv.data('factcheckuntouched', claimDiv[0].innerHTML)
+    claimDiv.attr('data-factcheckuntouched', claimDiv[0].innerHTML)
+    const highlightHTML = `
+      <span class="claim ${claimClass}" data-excerpt="${excerpt}" data-claim="${claim}">
+        ${excerpt}
+      </span>
+    `;
+
+    const excerptRegex = new RegExp(excerpt, 'g');
+    const newContent = textContent.replace(excerptRegex, highlightHTML)
+    claimDiv.html(newContent);
   });
 
   // Add hover event listeners with jQuery
@@ -26,6 +40,24 @@ function processPassageResponse(excerptsWithClaims) {
     function (event) { showTooltip(event); },
     function (event) { hideTooltip(event); }
   );
+}
+
+function getClaimClass(claim) {
+  switch (claim.label) {
+    case "True":
+      return "true"
+    case "Mostly True":
+      return "mostly-true"
+    case "False":
+      return "false"
+    case "Mostly False":
+      return "mostly-false"
+    case "Unsupported":
+      return "unsupported"
+    default:
+      console.error("Unrecognized claim label: " + claim.label)
+      return "unsupported"
+  }
 }
 
 function showTooltip(event) {

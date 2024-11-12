@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from factExtraction import extractClaimsLLM
+from factCheck import factCheckSingleClaim
 import uvicorn
 
 # Initialize FastAPI app
@@ -32,9 +33,17 @@ async def generate_response(request_body: RequestBody):
 # API endpoint to generate response for text passage
 @app.post("/passage/")
 async def generate_response(request_body: RequestBody):
-    # print(request_body.text)
-    result = extractClaimsLLM(request_body.text)
-    return result
+    print("NEW PASSAGE: \n" + request_body.text)
+    parsed_claims = extractClaimsLLM(request_body.text)
+    
+    # TO DO: batch claims, also join wait for futures and update claimStructs more efficiently 
+    for claimStruct in parsed_claims:
+        print(claimStruct)
+        print(claimStruct['claim'])
+        res = await factCheckSingleClaim(claimStruct['claim']);
+        claimStruct.update(res);
+    
+    return parsed_claims
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)  # Use 0.0.0.0 to allow external access

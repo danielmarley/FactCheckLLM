@@ -1,24 +1,5 @@
-import requests
-import asyncio
-import aiohttp
-import nest_asyncio
-from playwright.async_api import async_playwright
-from bs4 import BeautifulSoup
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from langchain.llms import Ollama
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
-import nest_asyncio
-import asyncio
-import aiohttp
-from bs4 import BeautifulSoup
-import nltk
-from nltk.tokenize import sent_tokenize
-import nltk
-nltk.download('punkt')
-from langchain.prompts import PromptTemplate
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts import FewShotPromptTemplate
 from langchain.chains import LLMChain
 from langchain.llms import Ollama
 import re
@@ -28,12 +9,7 @@ OLLAMA_MODEL = "llama3.2"
 OLLAMA_HOST = "http://host.docker.internal:11434" # for when running within docker image
 # OLLAMA_HOST = "http://localhost:11434"
 
-nest_asyncio.apply()
 ollama_model = Ollama(model=OLLAMA_MODEL, base_url=OLLAMA_HOST)
-
-from langchain_core.prompts import PromptTemplate
-from langchain_core.prompts import FewShotPromptTemplate
-
 
 claim_parse_example_prompt = PromptTemplate.from_template("Text: {input}\nOutput:\n{response}")
 claim_parse_examples = [{
@@ -110,7 +86,7 @@ If there are no notable claims in the text, return: "No notable claims found." D
 few_shot_claim_chain = LLMChain(llm=ollama_model, prompt=claim_parse_prompt)
 
 def extractClaimsLLM(passage: str):
-    response = few_shot_claim_chain.run(input=passage)
+    response = few_shot_claim_chain.run(input=passage)    
     return llmResponseToStruct(response)
 
 def llmResponseToStruct(text):
