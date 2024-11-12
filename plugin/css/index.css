@@ -1,0 +1,31 @@
+html {
+    /* background-color: #C5E7E2; */
+    font-family: "Funnel Display", Arial, sans-serif;
+}
+
+body {
+    min-width: 250px;
+    max-width: 500px;
+}
+
+.input-container {
+    width: 250px;
+    min-width: fit-content;
+    display: grid;
+    grid-auto-flow: column;
+}
+
+#claim-input {
+    padding: 9px;
+    border-radius: 6px;
+}
+
+#submit-claim {
+    margin-left: 10px;
+    vertical-align: middle;
+    font-weight: bold;
+    border-radius: 6px;
+    background-color: #004643;
+    color: white;
+    cursor: pointer;
+}

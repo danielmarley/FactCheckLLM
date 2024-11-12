@@ -1,0 +1,25 @@
+{
+    "manifest_version": 3,
+    "name": "FactCheck LLM",
+    "description": "Extension to support fast and easy fact checking!",
+    "version": "1.0",
+    "action": {
+      "default_popup": "hello.html",
+      "default_icon": "content/hermes-icon.png"
+    },
+    "permissions": [
+      "contextMenus",
+      "scripting",
+      "activeTab"
+    ],
+    "background": {
+      "service_worker": "js/background.js"
+    },
+    "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["js/jquery-3.7.1.min.js", "js/content.js"],
+      "css": ["css/content.css"]
+    }
+  ]
+}

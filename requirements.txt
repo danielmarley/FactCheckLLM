@@ -5,3 +5,5 @@ langchain-community
 colab-xterm
 fuzzywuzzy
 nltk
+fastapi
+uvicorn

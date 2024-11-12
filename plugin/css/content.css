@@ -1,0 +1,37 @@
+.claim {
+  background-color: yellow;
+  cursor: pointer;
+  font-weight: bold;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.claim + .claim {
+  margin-right: 10px;
+}
+
+.claim:hover{
+  /* Hover effect for the raised look */
+  transform: translateY(-3px); /* Lifts the element slightly */
+  box-shadow: 0px 8px 12px rgba(0, 0, 0, 0.2); /* Deepened shadow */
+}
+
+.claim.true {
+  background-color: #69AF6D;
+}
+
+.claim.mostly-true {
+  background-color: #C5E7E2;
+}
+
+.claim.unsupported {
+  background-color: khaki;
+}
+
+.claim.mostly-false {
+  background-color: #F7B2AD;
+}
+
+.claim.false {
+  background-color: #CC2936;
+  color: white;
+}
