@@ -87,6 +87,7 @@ few_shot_claim_chain = LLMChain(llm=ollama_model, prompt=claim_parse_prompt)
 
 def extractClaimsLLM(passage: str):
     response = few_shot_claim_chain.run(input=passage)    
+    print("raw response " + response)
     return llmResponseToStruct(response)
 
 def llmResponseToStruct(text):

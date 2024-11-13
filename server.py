@@ -36,6 +36,9 @@ async def generate_response(request_body: RequestBody):
     print("NEW PASSAGE: \n" + request_body.text)
     parsed_claims = extractClaimsLLM(request_body.text)
     
+    print("PARSED PASSAGE: \n") 
+    print(parsed_claims)
+    
     # TO DO: batch claims, also join wait for futures and update claimStructs more efficiently 
     for claimStruct in parsed_claims:
         print(claimStruct)
@@ -43,6 +46,7 @@ async def generate_response(request_body: RequestBody):
         res = await factCheckSingleClaim(claimStruct['claim']);
         claimStruct.update(res);
     
+    print("Returning passages to client...") 
     return parsed_claims
 
 if __name__ == "__main__":

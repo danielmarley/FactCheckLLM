@@ -16,6 +16,11 @@ $(document).ready(function() {
       </div>
       <div class="carat carat-bottom tooltipModal" hidden="true"></div>
     </div>`).appendTo('body');
+
+  // Create spinner
+  $(`<div id="loadingSpinnerWrapper">
+    <div id="loadingSpinner" style="display: block;"></div>
+  </div>`).appendTo('body');
   
   // Keep tooltip open while interacting with it
   $('.tooltipModal').on('mouseleave', function(event) {
@@ -61,8 +66,8 @@ function processPassageResponse(excerptsWithClaims) {
       </span>
     `;
 
-    const excerptRegex = new RegExp(excerpt, 'g');
-    const newContent = textContent.replace(excerptRegex, highlightHTML)
+    // const excerptRegex = new RegExp(excerpt, 'g');
+    const newContent = textContent.replace(excerpt, highlightHTML)
     claimDiv.html(newContent);
     $(`#${claimId}`).data('reply', reply)
       .data('excerpt', excerpt)
@@ -165,8 +170,8 @@ function positionTooltip(event, $tooltip, positionUpdate) {
   }
 
   let caratPosition = event.pageX - leftPosition - 15;
-  caratPosition = Math.min(caratPosition, leftPosition + tooltipWidth - 40 - 15 )
-  caratPosition = Math.max(caratPosition, leftPosition)
+  caratPosition = Math.min(caratPosition, tooltipWidth - 40 - 15 )
+  caratPosition = Math.max(caratPosition, 15)
 
   $('.carat').css({
     left: caratPosition
@@ -179,6 +184,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "processPassageResponse") {
     processPassageResponse(message.data); // Call the function with the passed data
     sendResponse({ status: "200" });
+  }
+  else if (message.action === 'apiCallStart') {
+    $('#loadingSpinnerWrapper').addClass('open');
+  }
+  else if (message.action === 'apiCallComplete') {
+    $('#loadingSpinnerWrapper').removeClass('open');
   }
   else if (message.action === "reset") {
     resetPage();

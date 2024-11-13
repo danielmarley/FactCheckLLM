@@ -27,13 +27,21 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
     // Query LLM Server
     let resPromise = POST(factCheckLLMHost + "/passage", {text: info.selectionText})
+    chrome.tabs.sendMessage(tab.id, { action: "apiCallStart" })
 
     // Update page based on response
     resPromise.then((res) => chrome.tabs.sendMessage(tab.id, { action: "processPassageResponse", data: res }, (response) => {
       if (response && response.status === "200") {
         console.log("Highlighting completed successfully.");
       }
-    }));
+      else (
+        console.error("Error calling `/passages`: ", response)
+      )
+    })).catch(err => {
+      console.error("Error calling `/passages`: ", err)
+    }).finally(() => {
+      chrome.tabs.sendMessage(tab.id, { action: "apiCallComplete" })
+    });
   }
   else if (info.menuItemId === "factCheckLLMReset") {
     // Reset page
