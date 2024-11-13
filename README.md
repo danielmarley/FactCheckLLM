@@ -19,7 +19,7 @@ The docker image is used to execute jupyter notebook in a Linux environment. It 
 * Can then develop and run inside the jupyter notebook with the same Linux libraries as collab while the notebook connects to a faster, local version of Llama
 
 #### 3) Run the FastAPI server
-In jupyter notebooks, launch a console and execute `python server.py` to serve the file on port 8080. You could alternatively run `uvicorn server:app --reload --port 8080 --host 0.0.0.0` and that will refresh the server on file change.
+In jupyter notebooks, launch a console and execute `playwright install` first. Then you can run `python server.py` to serve the file on port 8080. You could also run `uvicorn server:app --reload --port 8080 --host 0.0.0.0` and that will refresh the server on any file changes.
 
 #### 4) Run the web plugin in Chrome
 * Go to the Extensions page by entering chrome://extensions in a new tab. 
