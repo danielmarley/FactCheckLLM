@@ -1,3 +1,111 @@
+#tooltip {
+  /* background-color: #C5E7E2; */
+  font-family: "Funnel Display", Arial, sans-serif;
+  position: absolute;
+  background-color: #fffced;
+  border-radius: 6px;
+  overflow-x: none;
+  min-width: 350px;
+  max-width: 500px;
+  min-height: 250px;
+  max-height: 350px;
+  z-index: 1000;
+}
+
+.tooltipModal {
+  h2 {
+    display: block;
+    font-size: 1.5em;
+    margin-block-start: 0.83em;
+    margin-block-end: 0.83em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    font-weight: bold;
+    unicode-bidi: isolate;
+  }
+
+  h3 {
+    display: block;
+    font-size: 1.17em;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    font-weight: bold;
+    unicode-bidi: isolate;
+  }
+
+  h4 {
+    display: block;
+    margin-block-start: 1.33em;
+    margin-block-end: 1.33em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    font-weight: bold;
+    unicode-bidi: isolate;
+  }
+
+  p {
+    display: block;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    unicode-bidi: isolate;
+  }
+}
+
+#tooltip-content {
+  overflow-y: scroll;
+  overflow-x: none;
+  padding-top: 0px;
+  padding-right: 20px;
+  padding-bottom: 0px;
+  padding-left: 20px;
+  min-width: 350px;
+  max-width: 500px;
+  min-height: 250px;
+  max-height: 350px;
+  box-shadow: -2px 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+#credits {
+  position: sticky;
+  bottom: -1px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  text-align: right;
+  background-color: #fffced;
+  font-style: italic;
+}
+
+.carat {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  z-index: 1001;
+}
+.carat-bottom {
+  width: 0; 
+  height: 0; 
+  border-right: 20px solid transparent; 
+  border-left: 20px solid transparent; /* 40px height (20+20) */
+  border-top: 20px solid #fffced;
+  position:absolute;
+  top: 100%;
+}
+.carat-top {
+  width: 0; 
+  height: 0; 
+  border-right: 20px solid transparent; 
+  border-left: 20px solid transparent; /* 40px height (20+20) */
+  border-bottom: 20px solid #fffced;
+  position: absolute;
+  top: -20px;
+}
+
 .claim {
   background-color: yellow;
   cursor: pointer;

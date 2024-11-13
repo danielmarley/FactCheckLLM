@@ -98,10 +98,9 @@ def llmResponseToStruct(text):
     excerpt_matches = re.findall(patternE, text, re.DOTALL)  
     restatement_matches = re.findall(patternR, text, re.DOTALL) 
     
-    print(text)
-    print(excerpt_matches)
-    print(restatement_matches)
-    print(len(excerpt_matches), len(restatement_matches))
+    if (len(excerpt_matches) != len(restatement_matches)):
+        print("ERROR: Mismatch in assertion v claim count")
+        throw(" Mismatch in assertion v claim count, failure parsing passage")
 
     # Store the matches in a list of dictionaries
     result = [{"excerpt": excerpt_matches[i].strip(), "claim": restatement_matches[i].strip()} for i in range(len(excerpt_matches))]

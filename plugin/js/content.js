@@ -1,8 +1,38 @@
+// Insert tooltip on page load
+$(document).ready(function() {
+  $(`<link rel="preconnect" href="https://fonts.googleapis.com">`).appendTo('head');
+  $(`<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`).appendTo('head');
+  $(`<link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap" rel="stylesheet">`).appendTo('head');
+
+  // Create the tooltip modal element
+  $(`<div class='tooltipModal' id="tooltip" hidden="true">
+      <div class="carat carat-top tooltipModal" hidden="true"></div>
+      <div id="tooltip-content">
+        <h2 id="claim">Claim: <span id="claimContent"></span></h2>
+        <h3 id="label">Label: <span id="labelContent"></span></h2> 
+        <h4 id="reasoningHeader">Explained Response: </h4>
+        <p id="reasoningBody"></p>
+        <div id="credits">Powered by FactCheckLLM</div>
+      </div>
+      <div class="carat carat-bottom tooltipModal" hidden="true"></div>
+    </div>`).appendTo('body');
+  
+  // Keep tooltip open while interacting with it
+  $('.tooltipModal').on('mouseleave', function(event) {
+    // Get the element that the mouse moved into
+    const newTarget = event.relatedTarget;
+
+    // Check if the new target is not `.claim` or `.tooltipModal`
+    if (!$(newTarget).closest('.claim').length && !$(newTarget).closest('.tooltipModal').length) {
+        // Hide the tooltip if the mouse is outside of `.claim` and `.tooltipModal`
+        $('#tooltip').hide();
+    }
+  });
+});
+
+// Reset annotation
 function resetPage() {
-  // $('span.claim').each(function() {
-  //   const originalText = $(this).data('excerpt');
-  //   $(this).replaceWith(originalText);
-  // });
+  window.getSelection().removeAllRanges();
   $('[data-factcheckuntouched]').each(function() {
     const originalInnerHtml = $(this).attr('data-factcheckuntouched');
     $(this).removeAttr('data-factcheckuntouched')
@@ -10,6 +40,7 @@ function resetPage() {
   });
 }
 
+// Process new passage request for LLM API
 function processPassageResponse(excerptsWithClaims) {
   excerptsWithClaims.forEach((item) => {
     const { excerpt, claim, label, reply } = item;
@@ -22,10 +53,10 @@ function processPassageResponse(excerptsWithClaims) {
       .last();
     const textContent = claimDiv[0].textContent;
 
-    // claimDiv.data('factcheckuntouched', claimDiv[0].innerHTML)
+    const claimId = String(Math.floor(Math.random() * 1000000));
     claimDiv.attr('data-factcheckuntouched', claimDiv[0].innerHTML)
     const highlightHTML = `
-      <span class="claim ${claimClass}" data-excerpt="${excerpt}" data-claim="${claim}">
+      <span id='${claimId}' class="claim ${claimClass}" data-label="${label}">
         ${excerpt}
       </span>
     `;
@@ -33,52 +64,113 @@ function processPassageResponse(excerptsWithClaims) {
     const excerptRegex = new RegExp(excerpt, 'g');
     const newContent = textContent.replace(excerptRegex, highlightHTML)
     claimDiv.html(newContent);
+    $(`#${claimId}`).data('reply', reply)
+      .data('excerpt', excerpt)
+      .data('claim', claim);
   });
 
-  // Add hover event listeners with jQuery
-  $(".claim").hover(
-    function (event) { showTooltip(event); },
-    function (event) { hideTooltip(event); }
-  );
+  $('.claim').on('mouseenter', function(event) {
+    const $tooltip = $('#tooltip');
+    // Set the tooltip content
+    $tooltip.find('#claimContent').text($(this).data('claim'))
+    $tooltip.find('#labelContent').text($(this).data('label'))
+    $tooltip.find('#reasoningBody').text($(this).data('reply'))
+    $('#tooltip-content').scrollTop(0);
+    $tooltip.show()
+
+    // Position the tooltip dynamically
+    positionTooltip(event, $tooltip, false);
+  });
+
+  $('.claim, .tooltipModal').on('mouseleave', function(event) {
+    // Get the element the mouse moved into
+    const newTarget = event.relatedTarget;
+
+    // Check if the new target is not .claim or .tooltipModal
+    if (!$(newTarget).closest('.claim').length && !$(newTarget).closest('.tooltipModal').length) {
+        // Hide the tooltip if the mouse is outside of .claim and .tooltipModal
+        $('#tooltip').hide();
+    }
+  });
+
+  // Event to update the tooltip position on mouse move
+  $('.claim').mousemove(function(event) {
+      const $tooltip = $('#tooltip');
+      positionTooltip(event, $tooltip, true);
+  });
 }
 
-function getClaimClass(claim) {
-  switch (claim.label) {
-    case "True":
-      return "true"
-    case "Mostly True":
+function getClaimClass(label) {
+  if (label.toUpperCase() === "TRUE") {
+      return "true";
+  }
+  else if (label.toUpperCase() === "MOSTLY TRUE"){
       return "mostly-true"
-    case "False":
+  }
+  else if (label.toUpperCase() === "FALSE"){
       return "false"
-    case "Mostly False":
+  }
+  else if (label.toUpperCase() === "MOSTLY FALSE"){
       return "mostly-false"
-    case "Unsupported":
+  }
+  else if (label.toUpperCase() === "NOT ENOUGH EVIDENCE"){
       return "unsupported"
-    default:
-      console.error("Unrecognized claim label: " + claim.label)
+  }
+  else {
+      console.error("Unrecognized claim label: " + label)
       return "unsupported"
   }
 }
 
-function showTooltip(event) {
-  const claim = $(event.target).data("claim");
-  const tooltip = $("<div>")
-    .addClass("tooltip")
-    .text(claim)
-    .appendTo("body");
+// Function to position the tooltip
+function positionTooltip(event, $tooltip, positionUpdate) {
+  const tooltipHeight = $tooltip.outerHeight()
+  const tooltipWidth = $tooltip.outerWidth();
+  const pageHeight = $(window).height();
+  const pageWidth = $(window).width();
 
-  const rect = event.target.getBoundingClientRect();
-  tooltip.css({
-    left: `${rect.left + window.scrollX}px`,
-    top: `${rect.bottom + window.scrollY + 5}px`,
-    display: "block"
-  });
+  // Determine if there's more space above or below the cursor
+  let topPosition = event.pageY + 21;
+  if (event.pageY + tooltipHeight + 350 > pageHeight) {
+      // If not enough space below, position above the cursor
+      topPosition = event.pageY - tooltipHeight - 21;
+      $('.carat-top').hide()
+      $('.carat-bottom').show()
+  }
+  else {
+      $('.carat-top').show()
+      $('.carat-bottom').hide()
+  }
 
-  $(event.target).data("tooltip", tooltip); // Store the tooltip element for later
-}
+  // Determine if tooltip should shift horizontally to stay within page bounds
+  let leftPosition = event.pageX - tooltipWidth / 2;
+  if (leftPosition + tooltipWidth > pageWidth) {
+      leftPosition = pageWidth - tooltipWidth - 15;
+  } else if (leftPosition < 0) {
+      leftPosition = 15;
+  }
 
-function hideTooltip(event) {
-  $(event.target).data("tooltip").remove();
+  // Apply the final calculated positions
+  // Do not update y coord on mousemove
+  if (positionUpdate === false) {
+    $tooltip.css({
+        top: topPosition,
+        left: leftPosition
+    });
+  }
+  else {
+    $tooltip.css({
+      left: leftPosition
+    });
+  }
+
+  let caratPosition = event.pageX - leftPosition - 15;
+  caratPosition = Math.min(caratPosition, leftPosition + tooltipWidth - 40 - 15 )
+  caratPosition = Math.max(caratPosition, leftPosition)
+
+  $('.carat').css({
+    left: caratPosition
+  })
 }
 
 

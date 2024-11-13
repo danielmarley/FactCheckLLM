@@ -8,7 +8,7 @@ factCheckLLMHost = "http://localhost:8080"
 // Add selection option to context menu on start
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
-    id: "factCheckLLMapi",
+    id: "factCheckLLM-Passage-API",
     title: "Ask FactCheckLLM",
     contexts: ["selection"],
   })
@@ -21,7 +21,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Setup listener for passageSelection event
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "factCheckLLMapi") {
+  if (info.menuItemId === "factCheckLLM-Passage-API") {
     // Reset page
     chrome.tabs.sendMessage(tab.id, { action: "reset" })
 

@@ -128,7 +128,7 @@ async def generate_context_and_assess_claim(claim, context):
     You are an assistant that provides factual information.
     Analyze the following claim: '{claim}'.
     Context: {context}
-    1. State if it is true, false, mostly true, mostly false, or unsupported.
+    1. State if it is true, false, mostly true, mostly false, or not enough evidence to make a decision.
     2. Provide relevant context or background information.
     3. List key facts and evidence related to this claim.
     4. Mention opposing views or evidence.
@@ -168,7 +168,9 @@ async def handle_feedback(response, claim, context):
 async def factCheckSingleClaim(claim):
     context = ""
     result = await generate_context_and_assess_claim(claim, context)
-    pattern = r"\b(Mostly True|Mostly False|True|False|Unsupported)\b"
+    print("\n\nRESULT: \n\n")
+    print(result)
+    pattern = r"\b(Mostly True|Mostly False|True|False|Not Enough Evidence)\b"
     match = re.search(pattern, result, re.IGNORECASE)
     label = "Unsupported"
     if match:
