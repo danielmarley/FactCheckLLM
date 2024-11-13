@@ -1,7 +1,9 @@
 # FactCheckLLM
-
-### Steps to run 
-
+### Table of Contents
+- [Steps to Run](#steps-to-run)
+- [Python Server Endpoints](#python-server-endpoints)
+-----------------
+## Steps to Run
 #### 1) Install Ollama
 * Navigate to https://ollama.com/download
 * Download and install version for OS
@@ -24,3 +26,33 @@ In jupyter notebooks, launch a console and execute `python server.py` to serve t
 * Enable Developer Mode by clicking the toggle switch next to Developer mode. (was in the top right for me)
 * Click the Load unpacked button and select the 'plugin' directory from this workspace.
 * It's installed! Any time you update though you will need to refresh the plugin manually from the chrome extension page.
+
+-----------------
+## Python Server Endpoints
+* `GET`: `/health`
+    * response:
+        * `status`: `ok`
+* `POST`: `/passage`
+    * body: JSON
+        * `text`: Body of text to be split into claims
+    * response: JSON[]
+        * `excerpt`: Exact excerpt from input passage related to claim
+        * `claim`: Claim identified and researched from excerpt
+        * `label`: Assigned label of "True", "Mostly True", "Mostly False", "False" or "Not Enough Evidence"
+        * `reply`: LLM response and justification of assigned label
+* `POST`: `/claim`
+    * body: JSON
+        * `claim`: Individual claim to be researched
+    * response: JSON
+        * `claim`: Claim researched
+        * `label`: Assigned label of "True", "Mostly True", "Mostly False", "False" or "Not Enough Evidence"
+        * `reply`: LLM response and justification of assigned label
+* `POST`: `/feedback`
+    * body: JSON
+        * `claim`: Individual claim to be researched
+        * `additional_context`: Added context or review/rating of claim label
+    * response: JSON
+        * `claim`: Claim researched
+        * `context`: Added context
+        * `label`: Assigned label of "True", "Mostly True", "Mostly False", "False" or "Not Enough Evidence"
+        * `reply`: LLM response and justification of assigned label
