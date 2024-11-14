@@ -2,7 +2,6 @@ factCheckLLMHost = "http://localhost:8080"
 
 //TODO: On error, open snackbar/alert
 //TODO: On no claim, open snackbar/alert
-//TODO: Spinner on call
 //TODO: State machine (disable buttons once requested, store standard page version v edited)
 
 // Add selection option to context menu on start

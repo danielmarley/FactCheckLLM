@@ -77,8 +77,10 @@ function processPassageResponse(excerptsWithClaims) {
   $('.claim').on('mouseenter', function(event) {
     const $tooltip = $('#tooltip');
     // Set the tooltip content
+    const label = $(this).data('label')
+
     $tooltip.find('#claimContent').text($(this).data('claim'))
-    $tooltip.find('#labelContent').text($(this).data('label'))
+    $tooltip.find('#labelContent').text(label).removeClass().addClass(getClaimClass(label))
     $tooltip.find('#reasoningBody').text($(this).data('reply'))
     $('#tooltip-content').scrollTop(0);
     $tooltip.show()
