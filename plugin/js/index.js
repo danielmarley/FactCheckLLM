@@ -1,5 +1,3 @@
-factCheckLLMHost = "http://localhost:8080"
-
 // TODO: Add claim review/context mechanism
 
 // Register events on page (not allowed to inline by Chrome)
@@ -9,8 +7,7 @@ $(document).ready(function() {
 
 function submitClaim() {
   const claim = document.getElementById('claim-input').value;
-
-  let resPromise = POST(factCheckLLMHost + "/claim", {claim: claim})
+  const resPromise = postClaim(claim);
   $('#loadingSpinnerWrapper').addClass('open')
 
     // Update page based on response
@@ -29,7 +26,7 @@ function submitClaim() {
         <p id="reasoningBody">${res.reply}</p>
         <div class="feedbackWrap">
           <div class="input-container">
-            <input type="text" id="feedback-input" class="fcllm-input hiddenVis feedbackForm" placeholder="Add additional context to improve response">
+            <input type="text" id="feedback-input" class="fcllm-input hiddenVis feedbackForm" placeholder="Add additional context">
             <button type="submit" class="submit-feedback hiddenVis feedbackForm">GO</button>
           
             <button class="rating-button-up">
@@ -46,8 +43,8 @@ function submitClaim() {
           </div>
         </div>
       </div>`).appendTo('#claimResponses')
-      $(`#${claimId}`).data('claim', res.claim);
-      $(`#${claimId}`).data('context', res.context);
+      $(`#${claimId}`).data('claim', res.claim)
+        .data('context', res.context);
 
       $(`#${claimId} .rating-button-up`).on('click', (ev) => {
         $(`#${claimId} .rating-button-down`).removeClass('selected')
@@ -69,68 +66,4 @@ function submitClaim() {
     }).finally(() => {
       $('#loadingSpinnerWrapper').removeClass('open')
     });
-}
-
-function getClaimClass(label) {
-  if (label.toUpperCase() === "TRUE") {
-      return "fcllm-true";
-  }
-  else if (label.toUpperCase() === "MOSTLY TRUE"){
-      return "fcllm-mostly-true"
-  }
-  else if (label.toUpperCase() === "FALSE"){
-      return "fcllm-false"
-  }
-  else if (label.toUpperCase() === "MOSTLY FALSE"){
-      return "fcllm-mostly-false"
-  }
-  else if (label.toUpperCase() === "NOT ENOUGH EVIDENCE"){
-      return "fcllm-unsupported"
-  }
-  else {
-      console.error("Unrecognized claim label: " + label)
-      return "fcllm-unsupported"
-  }
-}
-
-// REST functions
-async function GET(url) {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`);
-    }
-
-    const json = await response.json();
-    return json;
-  } catch (error) {
-    console.error(error.message);
-    return undefined;
-  }
-}
-
-async function POST(url, postBody) {
-  try {
-    const jsonBody = JSON.stringify(postBody)
-    const contentLength = new TextEncoder().encode(jsonBody).length;
-
-    const response = await fetch(url, {
-      method: "POST",
-      body: jsonBody,
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': contentLength.toString()
-      },
-    })
-    if (!response.ok) {
-      console.error(response)
-      throw new Error(`Response status: ${response.status}`);
-    }
-
-    const json = await response.json();
-    return json;
-  } catch (error) {
-    console.error(error.message);
-    return undefined;
-  }
 }

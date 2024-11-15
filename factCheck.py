@@ -142,7 +142,7 @@ async def generate_context_and_assess_claim(claim, context):
 
     return response, context
             
-async def claimFeedback(response, claim, context, userFeedback):
+async def claimFeedback(claim, context, userFeedback):
     context += f"\nAdditional Context: {userFeedback}"
     print("\nRe-running the LLM chain with updated context...")
     new_response, context = await generate_context_and_assess_claim(claim, context)

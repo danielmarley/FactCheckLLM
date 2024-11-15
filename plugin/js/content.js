@@ -12,10 +12,27 @@ $(document).ready(function() {
         <h3 id="label">Label: <span id="labelContent"></span></h2> 
         <h4 id="reasoningHeader">Explained Response: </h4>
         <p id="reasoningBody"></p>
+        <div class="feedbackWrap">
+          <div class="input-container">
+            <input type="text" id="feedback-input" class="fcllm-input hiddenVis feedbackForm" placeholder="Add additional context">
+            <button type="submit" class="submit-feedback hiddenVis feedbackForm">GO</button>
+          
+            <button class="rating-button-up">
+              <svg class="thumb-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M1 21h4V9H1v12zM23 11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L13.17 2 7.59 7.59C7.21 7.98 7 8.49 7 9v10c0 1.1.9 2 2 2h8c.78 0 1.48-.45 1.84-1.13l3.02-5.53c.09-.18.14-.38.14-.59v-2z"/>
+              </svg>
+            </button>
+
+            <button class="rating-button-down">
+              <svg class="thumb-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M1 3h4v12H1V3zm22 10c0 1.1-.9 2-2 2h-6.31l.95 4.57.03.32c0 .41-.17.79-.44 1.06L13.17 22 7.59 16.41C7.21 16.02 7 15.51 7 15V5c0-1.1.9-2 2-2h8c.78 0 1.48.45 1.84 1.13l3.02 5.53c.09.18.14.38.14.59v2z"/>
+              </svg>
+            </button>
+          </div>
         <div id="credits">Powered by FactCheckLLM</div>
       </div>
       <div class="carat carat-bottom tooltipModal" hidden="true"></div>
-    </div>`).appendTo('body');
+    </div>`).appendTo('body');  
 
   // Create spinner
   $(`<div id="loadingSpinnerWrapper">
@@ -31,7 +48,27 @@ $(document).ready(function() {
     if (!$(newTarget).closest('.claim').length && !$(newTarget).closest('.tooltipModal').length) {
         // Hide the tooltip if the mouse is outside of `.claim` and `.tooltipModal`
         $('#tooltip').hide();
+        $(`#tooltip .rating-button-down`).removeClass('selected')
+        $(`#tooltip .rating-button-up`).removeClass('selected')
+        $(`#tooltip .feedbackForm`).addClass('hiddenVis')
+        $(`#tooltip input.feedbackForm`).val('')
     }
+  });
+
+  $(`#tooltip .rating-button-up`).on('click', (ev) => {
+    $(`#tooltip .rating-button-down`).removeClass('selected')
+    $(`#tooltip .rating-button-up`).addClass('selected')
+    $(`#tooltip .feedbackForm`).addClass('hiddenVis')
+  });
+
+  $(`#tooltip .rating-button-down`).on('click', (ev) => {
+    $(`#tooltip .rating-button-down`).addClass('selected')
+    $(`#tooltip .rating-button-up`).removeClass('selected')
+    $(`#tooltip .feedbackForm`).removeClass('hiddenVis')
+  });
+
+  $(`#tooltip .submit-feedback`).on('click', (ev) => {
+    submitFeedback($('#tooltip').data('id'))
   });
 });
 
@@ -45,33 +82,78 @@ function resetPage() {
   });
 }
 
+function submitPassageRequest(selectionText) {
+  $('#loadingSpinnerWrapper').addClass('open');
+  postPassages(selectionText).then((res) => { 
+    console.log('Passages response: ')
+    console.log(res)
+    processPassageResponse(res);
+  }).catch(err => {
+    console.error("Error calling `/passages`: ", err)
+  }).finally(() => {
+    $('#loadingSpinnerWrapper').removeClass('open');
+  })
+}
+
 // Process new passage request for LLM API
 function processPassageResponse(excerptsWithClaims) {
-  excerptsWithClaims.forEach((item) => {
-    const { excerpt, claim, label, reply } = item;
-    const claimClass = getClaimClass(label);
-    // Use jQuery to highlight excerpts in the DOM
-    const claimDiv = $(`*:contains("${excerpt}")`)
+  resetPage();
+  const parentDivs = [];
+  const parentIndexToClaimsMap = {};
+
+  // Get all divs that contain excerpts
+  // Create map for parentDiv to claim indexes
+  excerptsWithClaims.forEach((item, itemIndex) => {
+    const { excerpt } = item;
+    const claimDiv = $(`*:contains("${excerpt}")`) // TODO handle nbsp
       .not('script')
       .not('head')
       .not('link')
       .last();
-    const textContent = claimDiv[0].textContent;
+    
+    if (parentDivs.includes(claimDiv[0])){
+      let key = parentDivs.indexOf(claimDiv[0])
+      parentIndexToClaimsMap[key].push(itemIndex) 
+    }
+    else {
+      parentDivs.push(claimDiv[0])
+      let key = parentDivs.length - 1;
+      parentIndexToClaimsMap[key] = [itemIndex];
+    }
+  });
 
-    const claimId = String(Math.floor(Math.random() * 1000000));
-    claimDiv.attr('data-factcheckuntouched', claimDiv[0].innerHTML)
-    const highlightHTML = `
-      <span id='${claimId}' class="claim ${claimClass}" data-label="${label}">
-        ${excerpt}
-      </span>
-    `;
+  // Per containing div, perform all text replacements in batch
+  parentDivs.forEach((excerptDiv, divIndex) => {
+    const textContent = excerptDiv.textContent;
+    let replacementContent = textContent; //textContent.replaceAll(String.fromCharCode([160]), ' ');
 
-    // const excerptRegex = new RegExp(excerpt, 'g');
-    const newContent = textContent.replace(excerpt, highlightHTML)
-    claimDiv.html(newContent);
-    $(`#${claimId}`).data('reply', reply)
-      .data('excerpt', excerpt)
-      .data('claim', claim);
+    const claimIndexes = parentIndexToClaimsMap[divIndex];
+
+    const uuids = []
+    for (var idx in claimIndexes) {
+      const { excerpt, claim, context, label, reply } = excerptsWithClaims[idx];
+      const claimClass = getClaimClass(label);
+      const claimId = String(Math.floor(Math.random() * 1000000));
+      const highlightHTML = `
+        <span id='${claimId}' class="claim ${claimClass}" data-label="${label}">
+          ${excerpt}
+        </span>
+      `;
+      replacementContent = replacementContent.replace(excerpt, highlightHTML)
+      uuids.push(claimId);
+    }
+    const $excerptDiv = $(excerptDiv);
+    $excerptDiv.attr('data-factcheckuntouched', textContent)
+    $excerptDiv.html(replacementContent);
+
+    claimIndexes.forEach((element, idx) => {
+      const claimId = uuids[idx];
+      const { excerpt, claim, context, label, reply } = excerptsWithClaims[element];
+      $(`#${claimId}`).data('reply', reply)
+        .data('excerpt', excerpt)
+        .data('claim', claim)
+        .data('context', context);
+    });
   });
 
   $('.claim').on('mouseenter', function(event) {
@@ -79,6 +161,7 @@ function processPassageResponse(excerptsWithClaims) {
     // Set the tooltip content
     const label = $(this).data('label')
 
+    $tooltip.data('id', $(this).attr("id"));
     $tooltip.find('#claimContent').text($(this).data('claim'))
     $tooltip.find('#labelContent').text(label).removeClass().addClass(getClaimClass(label))
     $tooltip.find('#reasoningBody').text($(this).data('reply'))
@@ -105,28 +188,6 @@ function processPassageResponse(excerptsWithClaims) {
       const $tooltip = $('#tooltip');
       positionTooltip(event, $tooltip, true);
   });
-}
-
-function getClaimClass(label) {
-  if (label.toUpperCase() === "TRUE") {
-      return "fcllm-true";
-  }
-  else if (label.toUpperCase() === "MOSTLY TRUE"){
-      return "fcllm-mostly-true"
-  }
-  else if (label.toUpperCase() === "FALSE"){
-      return "fcllm-false"
-  }
-  else if (label.toUpperCase() === "MOSTLY FALSE"){
-      return "fcllm-mostly-false"
-  }
-  else if (label.toUpperCase() === "NOT ENOUGH EVIDENCE"){
-      return "fcllm-unsupported"
-  }
-  else {
-      console.error("Unrecognized claim label: " + label)
-      return "fcllm-unsupported"
-  }
 }
 
 // Function to position the tooltip
@@ -181,17 +242,10 @@ function positionTooltip(event, $tooltip, positionUpdate) {
 }
 
 
-// Listen for messages from background.js
+// Listen for messages from background.js/the context menu
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "processPassageResponse") {
-    processPassageResponse(message.data); // Call the function with the passed data
-    sendResponse({ status: "200" });
-  }
-  else if (message.action === 'apiCallStart') {
-    $('#loadingSpinnerWrapper').addClass('open');
-  }
-  else if (message.action === 'apiCallComplete') {
-    $('#loadingSpinnerWrapper').removeClass('open');
+  if (message.action === "newPassageRequest") {
+    submitPassageRequest(message.data);
   }
   else if (message.action === "reset") {
     resetPage();

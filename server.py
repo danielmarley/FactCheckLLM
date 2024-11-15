@@ -21,7 +21,6 @@ class FeedbackRequestBody(BaseModel):
     id: str
     claim: str
     context: str
-    reply: str
     feedback: str
 
 # Request body schema
@@ -41,7 +40,7 @@ async def health_check():
 @app.post("/feedback/")
 async def feedback(request_body: FeedbackRequestBody):
     print("NEW FEEDBACK: \n" + request_body.feedback)
-    res = await claimFeedback(request_body.reply, request_body.claim, request_body.context, request_body.feedback);
+    res = await claimFeedback(request_body.claim, request_body.context, request_body.feedback);
     res['id'] = request_body.id;
     print("Returning adjusted claim to client...") 
     return res    
