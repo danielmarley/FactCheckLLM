@@ -15,18 +15,21 @@ function submitClaim() {
 
     // Update page based on response
     resPromise.then((res) => {
-      $("#submit-claim").val(""); 
+      $("#claim-input").val(""); 
       console.log("Claim completed successfully.");
       console.log(res)
 
       const labelClass = getClaimClass(res.label);
 
-      $(`<div id="claim-content">
+      const claimId = String(Math.floor(Math.random() * 1000000));
+      $(`<div id="${claimId}" class="claim-content">
         <h2 id="claim">Claim: <span id="claimContent">${claim}</span></h2>
         <h3 id="label">Label: <span id="labelContent" class='${labelClass}'>${res.label}</span></h2> 
         <h4 id="reasoningHeader">Explained Response: </h4>
         <p id="reasoningBody">${res.reply}</p>
-      </div>`).appendTo('#claimResponse')
+      </div>`).appendTo('#claimResponses')
+      $(`#${claimId}`).data('claim', res.claim);
+      $(`#${claimId}`).data('context', res.context);
     }).catch(err => {
       console.error("Error calling `/claim`: ", err)
     }).finally(() => {
@@ -36,23 +39,23 @@ function submitClaim() {
 
 function getClaimClass(label) {
   if (label.toUpperCase() === "TRUE") {
-      return "true";
+      return "fcllm-true";
   }
   else if (label.toUpperCase() === "MOSTLY TRUE"){
-      return "mostly-true"
+      return "fcllm-mostly-true"
   }
   else if (label.toUpperCase() === "FALSE"){
-      return "false"
+      return "fcllm-false"
   }
   else if (label.toUpperCase() === "MOSTLY FALSE"){
-      return "mostly-false"
+      return "fcllm-mostly-false"
   }
   else if (label.toUpperCase() === "NOT ENOUGH EVIDENCE"){
-      return "unsupported"
+      return "fcllm-unsupported"
   }
   else {
       console.error("Unrecognized claim label: " + label)
-      return "unsupported"
+      return "fcllm-unsupported"
   }
 }
 

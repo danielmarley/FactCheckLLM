@@ -109,23 +109,23 @@ function processPassageResponse(excerptsWithClaims) {
 
 function getClaimClass(label) {
   if (label.toUpperCase() === "TRUE") {
-      return "true";
+      return "fcllm-true";
   }
   else if (label.toUpperCase() === "MOSTLY TRUE"){
-      return "mostly-true"
+      return "fcllm-mostly-true"
   }
   else if (label.toUpperCase() === "FALSE"){
-      return "false"
+      return "fcllm-false"
   }
   else if (label.toUpperCase() === "MOSTLY FALSE"){
-      return "mostly-false"
+      return "fcllm-mostly-false"
   }
   else if (label.toUpperCase() === "NOT ENOUGH EVIDENCE"){
-      return "unsupported"
+      return "fcllm-unsupported"
   }
   else {
       console.error("Unrecognized claim label: " + label)
-      return "unsupported"
+      return "fcllm-unsupported"
   }
 }
 

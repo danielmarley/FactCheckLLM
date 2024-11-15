@@ -90,6 +90,7 @@
     margin-inline-start: 0px;
     margin-inline-end: 0px;
     unicode-bidi: isolate;
+    white-space: break-spaces;
   }
 }
 
@@ -165,23 +166,50 @@
   box-shadow: 0px 8px 12px rgba(0, 0, 0, 0.2); /* Deepened shadow */
 }
 
-.claim.true, .true {
+.claim.fcllm-true, .fcllm-true {
   background-color: #69AF6D;
 }
 
-.claim.mostly-true, .mostly-true {
-  background-color: #C5E7E2;
+.claim.fcllm-mostly-true, .fcllm-mostly-true {
+  background-color: #84e7b9;
 }
 
-.claim.unsupported, .unsupported {
+.claim.fcllm-unsupported, .fcllm-unsupported {
   background-color: khaki;
 }
 
-.claim.mostly-false, .mostly-false {
+.claim.fcllm-mostly-false, .fcllm-mostly-false {
   background-color: #F7B2AD;
 }
 
-.claim.false, .false {
+.claim.fcllm-false, .fcllm-false {
   background-color: #CC2936;
+  color: white;
+}
+
+.feedbackWrap {
+  text-align: right;
+}
+
+.rating-button-up, .rating-button-down{
+  width: 30px;
+  height: 30px;
+  margin: 10px 3px;
+  background: white;
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.rating-button-up:hover, .rating-button-down:hover {
+  background-color: rgb(230, 229, 229);
+}
+
+.rating-button-up.selected {
+  background-color: #57965a !important;
+  color: white;
+}
+
+.rating-button-down.selected {
+  background-color: #CC2936 !important;
   color: white;
 }

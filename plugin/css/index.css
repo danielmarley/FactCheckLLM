@@ -15,6 +15,10 @@ body {
     max-width: -webkit-fill-available;
 }
 
+p {
+    white-space: break-spaces;
+}
+
 .input-container {
     min-width: fit-content;
     display: grid;
@@ -22,13 +26,13 @@ body {
     grid-template-columns: 1fr 0fr;
 }
 
-#claimResponse {
+#claimResponses {
     margin: 15px;
     max-width: 500px;
     min-width: 250px;
 }
 
-#claim-content {
+.claim-content {
     border-radius: 20px;
     background-color: white;
     padding: 1px 20px;
