@@ -19,13 +19,6 @@ p {
     white-space: break-spaces;
 }
 
-.input-container {
-    min-width: fit-content;
-    display: grid;
-    grid-auto-flow: column;
-    grid-template-columns: 1fr 0fr;
-}
-
 #claimResponses {
     margin: 15px;
     max-width: 500px;
@@ -36,21 +29,11 @@ p {
     border-radius: 20px;
     background-color: white;
     padding: 1px 20px;
+    padding-bottom: 16px;
     margin-bottom: 10px;
 }
 
-#claim-input {
+.fcllm-input {
     padding: 9px;
     border-radius: 6px;
-}
-
-#submit-claim {
-    margin-left: 10px;
-    vertical-align: middle;
-    font-weight: bold;
-    border-radius: 6px;
-    background-color: #004643;
-    color: white;
-    cursor: pointer;
-    min-width: 60px;
 }

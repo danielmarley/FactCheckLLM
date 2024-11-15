@@ -191,10 +191,18 @@
   text-align: right;
 }
 
+.input-container {
+  min-width: fit-content;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: 1fr 0fr;
+  grid-gap: 10px;
+}
+
 .rating-button-up, .rating-button-down{
   width: 30px;
   height: 30px;
-  margin: 10px 3px;
+  margin: 4px 0px;
   background: white;
   border-radius: 11px;
   cursor: pointer;
@@ -212,4 +220,24 @@
 .rating-button-down.selected {
   background-color: #CC2936 !important;
   color: white;
+}
+
+#submit-claim, .submit-feedback  {
+  vertical-align: middle;
+  font-weight: bold;
+  border-radius: 6px;
+  background-color: #708fc9;
+  color: white;
+  cursor: pointer;
+  min-width: 60px;
+}
+
+.feedbackForm {
+  opacity: 1.0;
+  transition: opacity 0.3s ease;
+}
+
+.hiddenVis {
+  visibility: hidden;
+  opacity: 0.0;
 }
