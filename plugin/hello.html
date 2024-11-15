@@ -4,15 +4,24 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/content.css">
+    <script src="js/jquery-3.7.1.min.js"></script>
     <script src="js/index.js"></script>
   </head>
   
   <body>
+    <div id="loadingSpinnerWrapper">
+      <div id="loadingSpinner" style="display: block;"></div>
+    </div>
+
     <h1>FactCheckLLM</h1>
+    
+    <div id="claimResponse">
+    </div>
 
     <div class="input-container">
       <input type="text" id="claim-input" placeholder="Enter a claim">
-      <button type="submit" id="submit-claim" onclick="submitClaim()">GO</button>
+      <button type="submit" id="submit-claim">GO</button>
     </div>
   </body>
 </html>

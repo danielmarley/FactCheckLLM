@@ -1,18 +1,37 @@
 html {
-    /* background-color: #C5E7E2; */
-    font-family: "Funnel Display", Arial, sans-serif;
-}
-
-body {
     min-width: 250px;
     max-width: 500px;
 }
 
+html, body {
+    font-family: "Funnel Display", Arial, sans-serif;
+    background-color: #f6f0cd;
+    overflow-x: hidden;
+}
+
+body {
+    margin: 5px 15px;
+    width: max-content;
+    max-width: -webkit-fill-available;
+}
+
 .input-container {
-    width: 250px;
     min-width: fit-content;
     display: grid;
     grid-auto-flow: column;
+}
+
+#claimResponse {
+    margin: 15px;
+    max-width: 500px;
+    min-width: 250px;
+}
+
+#claim-content {
+    border-radius: 20px;
+    background-color: white;
+    padding: 1px 20px;
+    margin-bottom: 10px;
 }
 
 #claim-input {

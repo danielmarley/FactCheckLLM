@@ -17,22 +17,30 @@ app.add_middleware(
 )
 
 # Request body schema
-class RequestBody(BaseModel):
+class PassageRequestBody(BaseModel):
     text: str
 
+# Request body schema
+class ClaimRequestBody(BaseModel):
+    claim: str
+    
 # Health check endpoint
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
     
 # API endpoint to generate response for single claim
-@app.post("/single-claim/")
-async def generate_response(request_body: RequestBody):
-    return {"response": "Not implemented yet"}
+@app.post("/claim/")
+async def generate_response(request_body: ClaimRequestBody):
+    print("NEW CLAIM: \n" + request_body.claim)
+    res = await factCheckSingleClaim(request_body.claim);
+    res['claim'] = request_body.claim;
+    print("Returning claim to client...") 
+    return res
     
 # API endpoint to generate response for text passage
 @app.post("/passage/")
-async def generate_response(request_body: RequestBody):
+async def generate_response(request_body: PassageRequestBody):
     print("NEW PASSAGE: \n" + request_body.text)
     parsed_claims = extractClaimsLLM(request_body.text)
     
