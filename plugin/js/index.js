@@ -2,6 +2,7 @@ factCheckLLMHost = "http://localhost:8080"
 
 // TODO: Add claim review/context mechanism
 
+// Register events on page (not allowed to inline by Chrome)
 $(document).ready(function() {
   $('#submit-claim').on("click", submitClaim) 
 });
@@ -14,6 +15,7 @@ function submitClaim() {
 
     // Update page based on response
     resPromise.then((res) => {
+      $("#submit-claim").val(""); 
       console.log("Claim completed successfully.");
       console.log(res)
 

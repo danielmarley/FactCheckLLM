@@ -19,6 +19,7 @@ body {
     min-width: fit-content;
     display: grid;
     grid-auto-flow: column;
+    grid-template-columns: 1fr 0fr;
 }
 
 #claimResponse {
@@ -47,4 +48,5 @@ body {
     background-color: #004643;
     color: white;
     cursor: pointer;
+    min-width: 60px;
 }
