@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from factExtraction import extractClaimsLLM
-from factCheck import factCheckSingleClaim
+from factCheck import factCheckSingleClaim, claimFeedback
 import uvicorn
 
 # Initialize FastAPI app
@@ -17,12 +17,20 @@ app.add_middleware(
 )
 
 # Request body schema
-class PassageRequestBody(BaseModel):
-    text: str
+class FeedbackRequestBody(BaseModel):
+    id: str
+    claim: str
+    context: str
+    reply: str
+    feedback: str
 
 # Request body schema
 class ClaimRequestBody(BaseModel):
     claim: str
+
+# Request body schema
+class PassageRequestBody(BaseModel):
+    text: str
     
 # Health check endpoint
 @app.get("/health")
@@ -30,8 +38,17 @@ async def health_check():
     return {"status": "ok"}
     
 # API endpoint to generate response for single claim
+@app.post("/feedback/")
+async def feedback(request_body: FeedbackRequestBody):
+    print("NEW FEEDBACK: \n" + request_body.feedback)
+    res = await claimFeedback(request_body.reply, request_body.claim, request_body.context, request_body.feedback);
+    res['id'] = request_body.id;
+    print("Returning adjusted claim to client...") 
+    return res    
+    
+# API endpoint to generate response for single claim
 @app.post("/claim/")
-async def generate_response(request_body: ClaimRequestBody):
+async def claim(request_body: ClaimRequestBody):
     print("NEW CLAIM: \n" + request_body.claim)
     res = await factCheckSingleClaim(request_body.claim);
     res['claim'] = request_body.claim;
@@ -40,7 +57,7 @@ async def generate_response(request_body: ClaimRequestBody):
     
 # API endpoint to generate response for text passage
 @app.post("/passage/")
-async def generate_response(request_body: PassageRequestBody):
+async def passage(request_body: PassageRequestBody):
     print("NEW PASSAGE: \n" + request_body.text)
     parsed_claims = extractClaimsLLM(request_body.text)
     

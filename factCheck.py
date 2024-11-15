@@ -121,7 +121,7 @@ async def generate_context_and_assess_claim(claim, context):
                   else:
                       description = 'No content available.'
 
-              article_context = f"- **{title}**: {description[:200]}... [Read more]({url})\n"  # Truncate to 500 chars
+              article_context = f"- **{title}**: {description[:500]}... [Read more]({url})\n"  # Truncate to 500 chars
               context += article_context
     
     context_template = f"""
@@ -140,34 +140,23 @@ async def generate_context_and_assess_claim(claim, context):
 
     response = await chain.arun({"claim": claim})
 
-    return response
+    return response, context
+            
+async def claimFeedback(response, claim, context, userFeedback):
+    context += f"\nAdditional Context: {userFeedback}"
+    print("\nRe-running the LLM chain with updated context...")
+    new_response, context = await generate_context_and_assess_claim(claim, context)
+    pattern = r"\b(Mostly True|Mostly False|True|False|Not Enough Evidence)\b"
+    match = re.search(pattern, new_response, re.IGNORECASE)
+    label = "Unsupported"
+    if match:
+        label = match.group(0)  # Return the matched label
+    return { "reply": new_response, "label": label, "context": context }
 
-async def handle_feedback(response, claim, context):
-  while True:
-      print("\nResponse displayed to the user:")
-      print(response)
-
-      rating = input("Please rate the response on a scale of [good, bad, mostly relevant, mostly not relevant]: ").lower()
-
-      feedback = input("Do you have more context or corrections to provide? (y/n): ").lower()
-      
-      if feedback == 'y':
-          additional_context = input("Please provide your additional context or corrections: ")
-          context += f"\nAdditional Context: {additional_context}"
-      else:
-        return
-
-      if rating in ['bad', 'mostly not relevant']:
-          print("\nRe-running the LLM chain with updated context...")
-          new_response = await generate_context_and_assess_claim(claim, context)
-          print("\nUpdated Response based on your feedback:")
-          print(new_response)
-      else:
-          print("Thank you for your feedback! No need for further changes.")
 
 async def factCheckSingleClaim(claim):
     context = ""
-    result = await generate_context_and_assess_claim(claim, context)
+    result, context = await generate_context_and_assess_claim(claim, context)
     print("\n\nRESULT: \n\n")
     print(result)
     pattern = r"\b(Mostly True|Mostly False|True|False|Not Enough Evidence)\b"
@@ -175,8 +164,31 @@ async def factCheckSingleClaim(claim):
     label = "Unsupported"
     if match:
         label = match.group(0)  # Return the matched label
-    return { "reply": result, "label": label }
-            
+    return { "reply": result, "label": label, "context": context }
+
+
+# async def handle_feedback(response, claim, context):
+#   while True:
+#       print("\nResponse displayed to the user:")
+#       print(response)
+
+#       rating = input("Please rate the response on a scale of [good, bad, mostly relevant, mostly not relevant]: ").lower()
+
+#       feedback = input("Do you have more context or corrections to provide? (y/n): ").lower()
+      
+#       if feedback == 'y':
+#           additional_context = input("Please provide your additional context or corrections: ")
+#           context += f"\nAdditional Context: {additional_context}"
+#       else:
+#         return
+
+#       if rating in ['bad', 'mostly not relevant']:
+#           print("\nRe-running the LLM chain with updated context...")
+#           new_response = await generate_context_and_assess_claim(claim, context)
+#           print("\nUpdated Response based on your feedback:")
+#           print(new_response)
+#       else:
+#           print("Thank you for your feedback! No need for further changes.")
 # async def main():
 #     claim = "We would not have left $85 billion worth of brand-new, beautiful military equipment behind"
 #     claim = input("Please enter a claim to be fact-checked: ")
