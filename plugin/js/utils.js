@@ -65,23 +65,24 @@ function updateClaimContent(feedbackResponse){
 
 // Styling function
 function getClaimClass(label) {
-  if (label.toUpperCase() === "TRUE") {
+  let strLabel = String(label);
+  if (strLabel.toUpperCase() === "TRUE") {
       return "fcllm-true";
   }
-  else if (label.toUpperCase() === "MOSTLY TRUE"){
+  else if (strLabel.toUpperCase() === "MOSTLY TRUE"){
       return "fcllm-mostly-true"
   }
-  else if (label.toUpperCase() === "FALSE"){
+  else if (strLabel.toUpperCase() === "FALSE"){
       return "fcllm-false"
   }
-  else if (label.toUpperCase() === "MOSTLY FALSE"){
+  else if (strLabel.toUpperCase() === "MOSTLY FALSE"){
       return "fcllm-mostly-false"
   }
-  else if (label.toUpperCase() === "NOT ENOUGH EVIDENCE"){
+  else if (strLabel.toUpperCase() === "NOT ENOUGH EVIDENCE"){
       return "fcllm-unsupported"
   }
   else {
-      console.error("Unrecognized claim label: " + label)
+      console.error("Unrecognized claim label: " + strLabel)
       return "fcllm-unsupported"
   }
 }

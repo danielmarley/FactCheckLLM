@@ -5,8 +5,8 @@ $(document).ready(function() {
   $(`<link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap" rel="stylesheet">`).appendTo('head');
 
   // Create the tooltip modal element
-  $(`<div class='tooltipModal' id="tooltip" hidden="true">
-      <div class="carat carat-top tooltipModal" hidden="true"></div>
+  $(`<div class='tooltipModal' id="tooltip">
+      <div class="carat carat-top tooltipModal"></div>
       <div id="tooltip-content">
         <h2 id="claim">Claim: <span id="claimContent"></span></h2>
         <h3 id="label">Label: <span id="labelContent"></span></h2> 
@@ -31,7 +31,7 @@ $(document).ready(function() {
           </div>
         <div id="credits">Powered by FactCheckLLM</div>
       </div>
-      <div class="carat carat-bottom tooltipModal" hidden="true"></div>
+      <div class="carat carat-bottom tooltipModal"></div>
     </div>`).appendTo('body');  
 
   // Create spinner
