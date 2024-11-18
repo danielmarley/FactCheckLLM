@@ -18,6 +18,7 @@ import nltk
 from nltk.tokenize import sent_tokenize
 import nltk
 import re
+import urllib.parse
 
 nltk.download('punkt')
 nest_asyncio.apply()
@@ -40,7 +41,7 @@ async def fetch_article_content(url):
         return ""
 
 async def factcheck_parser(claim):
-    claim = claim.replace(" ", "%20")
+    claim = urllib.parse.quote(claim)
     url = f"https://www.factcheck.org/search/#gsc.tab=0&gsc.q={claim}&gsc.sort="
     print(url)
     async with async_playwright() as p:
@@ -71,6 +72,7 @@ async def retrieve_articles(claim):
 # work in prograss: If no articles were found in any of the three datasets, then use
 # newsAPI to try to find articles about the claim
 def fetch_news_articles(claim):
+    claim = urllib.parse.quote(claim)
     url = (
         'http://newsapi.org/v2/everything?'
         f'q={claim}&'
