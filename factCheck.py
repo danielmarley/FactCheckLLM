@@ -22,12 +22,12 @@ import urllib.parse
 nltk.download('punkt')
 nest_asyncio.apply()
 
-OLLAMA_MODEL = "llama3.2"
+OLLAMA_DEFAULT_MODEL = "llama3.2"
 # OLLAMA_MODEL = "llama2"
 OLLAMA_HOST = "http://host.docker.internal:11434" # for when running within docker image
 # OLLAMA_HOST = "http://localhost:11434"
 
-ollama_model = Ollama(model=OLLAMA_MODEL, base_url=OLLAMA_HOST)
+default_model = Ollama(model=OLLAMA_DEFAULT_MODEL, base_url=OLLAMA_HOST)
 
 async def fetch_article_content(url):
     try:
@@ -91,7 +91,10 @@ def fetch_news_articles(claim):
         print(f"Error fetching news articles: {e}")
         return []
 
-async def generate_context_and_assess_claim(claim, context):
+async def generate_context_and_assess_claim(claim, context, model):
+    if (model == None):
+        model = default_model
+        
     # Fetch news articles related to the claim
     if context == "":
       news_articles = await retrieve_articles(claim)
@@ -138,7 +141,7 @@ async def generate_context_and_assess_claim(claim, context):
     """
 
     prompt = PromptTemplate(template=context_template, input_variables=["claim"])
-    chain = LLMChain(llm=ollama_model, prompt=prompt)
+    chain = LLMChain(llm=model, prompt=prompt)
 
     response = await chain.arun({"claim": claim})
 
@@ -147,7 +150,7 @@ async def generate_context_and_assess_claim(claim, context):
 async def claimFeedback(claim, context, userFeedback):
     context += f"\nAdditional Context: {userFeedback}"
     print("\nRe-running the LLM chain with updated context...")
-    new_response, context = await generate_context_and_assess_claim(claim, context)
+    new_response, context = await generate_context_and_assess_claim(claim, context, None)
     pattern = r"\b(Mostly True|Mostly False|True|False|Not Enough Evidence)\b"
     match = re.search(pattern, new_response, re.IGNORECASE)
     label = "Unsupported"
@@ -156,9 +159,9 @@ async def claimFeedback(claim, context, userFeedback):
     return { "reply": new_response, "label": label, "context": context }
 
 
-async def factCheckSingleClaim(claim):
+async def factCheckSingleClaim(claim, model=None):
     context = ""
-    result, context = await generate_context_and_assess_claim(claim, context)
+    result, context = await generate_context_and_assess_claim(claim, context, model)
     print("\n\nRESULT: \n\n")
     print(result)
     pattern = r"\b(Mostly True|Mostly False|True|False|Not Enough Evidence)\b"
@@ -169,34 +172,28 @@ async def factCheckSingleClaim(claim):
     return { "reply": result, "label": label, "context": context }
 
 
-# async def handle_feedback(response, claim, context):
-#   while True:
-#       print("\nResponse displayed to the user:")
-#       print(response)
+async def factCheckSingleClaimNoContext(claim, model=None):
+    if (model == None):
+        model = default_model
 
-#       rating = input("Please rate the response on a scale of [good, bad, mostly relevant, mostly not relevant]: ").lower()
+    context_template = f"""
+    You are an assistant that provides factual information.
+    Analyze the following claim: '{claim}'.
+    1. State if it is true, false, mostly true, mostly false, or not enough evidence to make a decision.
+    2. Provide relevant context or background information.
+    3. List key facts and evidence related to this claim.
+    4. Mention opposing views or evidence.
+    5. If the claim is false, provide the correct information.
+    """
 
-#       feedback = input("Do you have more context or corrections to provide? (y/n): ").lower()
+    prompt = PromptTemplate(template=context_template, input_variables=["claim"])
+    chain = LLMChain(llm=model, prompt=prompt)
 
-#       if feedback == 'y':
-#           additional_context = input("Please provide your additional context or corrections: ")
-#           context += f"\nAdditional Context: {additional_context}"
-#       else:
-#         return
+    response = await chain.arun({"claim": claim})
 
-#       if rating in ['bad', 'mostly not relevant']:
-#           print("\nRe-running the LLM chain with updated context...")
-#           new_response = await generate_context_and_assess_claim(claim, context)
-#           print("\nUpdated Response based on your feedback:")
-#           print(new_response)
-#       else:
-#           print("Thank you for your feedback! No need for further changes.")
-# async def main():
-#     claim = "We would not have left $85 billion worth of brand-new, beautiful military equipment behind"
-#     claim = input("Please enter a claim to be fact-checked: ")
-#     context = ""
-#     result = await generate_context_and_assess_claim(claim, context)
-#     await handle_feedback(result, claim, context)
-
-# if __name__ == "__main__":
-#     asyncio.run(main())
+    pattern = r"\b(Mostly True|Mostly False|True|False|Not Enough Evidence)\b"
+    match = re.search(pattern, response, re.IGNORECASE)
+    label = "Unsupported"
+    if match:
+        label = match.group(0)  # Return the matched label
+    return { "reply": response, "label": label }
