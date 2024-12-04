@@ -1,15 +1,14 @@
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts import FewShotPromptTemplate
 from langchain.chains import LLMChain
-from langchain.llms import Ollama
+# from langchain.llms import Ollama
+from langchain_community.llms import Ollama
 import requests
 import asyncio
 import aiohttp
 import nest_asyncio
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
 import nest_asyncio
 import asyncio
 import aiohttp
@@ -72,7 +71,7 @@ async def retrieve_articles(claim):
 # work in prograss: If no articles were found in any of the three datasets, then use
 # newsAPI to try to find articles about the claim
 def fetch_news_articles(claim):
-    claim = urllib.parse.quote(claim)
+    # claim is a space-seperated string.
     url = (
         'http://newsapi.org/v2/everything?'
         f'q={claim}&'
@@ -86,6 +85,7 @@ def fetch_news_articles(claim):
         response = requests.get(url)
         response.raise_for_status()  # Throw an error for bad responses
         news_data = response.json()
+        print(news_data)
         return news_data.get('articles', [])
     except Exception as e:
         print(f"Error fetching news articles: {e}")
@@ -118,14 +118,14 @@ async def generate_context_and_assess_claim(claim, context):
                   if full_content:
                       soup = BeautifulSoup(full_content, 'html.parser')
                       first_paragraph = soup.find('p')
-                      description = first_paragraph.get_text(strip=True) if first_paragraph else 'No content available.'  
+                      description = first_paragraph.get_text(strip=True) if first_paragraph else 'No content available.'
 
                   else:
                       description = 'No content available.'
 
               article_context = f"- **{title}**: {description[:500]}... [Read more]({url})\n"  # Truncate to 500 chars
               context += article_context
-    
+
     context_template = f"""
     You are an assistant that provides factual information.
     Analyze the following claim: '{claim}'.
@@ -143,7 +143,7 @@ async def generate_context_and_assess_claim(claim, context):
     response = await chain.arun({"claim": claim})
 
     return response, context
-            
+
 async def claimFeedback(claim, context, userFeedback):
     context += f"\nAdditional Context: {userFeedback}"
     print("\nRe-running the LLM chain with updated context...")
@@ -177,7 +177,7 @@ async def factCheckSingleClaim(claim):
 #       rating = input("Please rate the response on a scale of [good, bad, mostly relevant, mostly not relevant]: ").lower()
 
 #       feedback = input("Do you have more context or corrections to provide? (y/n): ").lower()
-      
+
 #       if feedback == 'y':
 #           additional_context = input("Please provide your additional context or corrections: ")
 #           context += f"\nAdditional Context: {additional_context}"

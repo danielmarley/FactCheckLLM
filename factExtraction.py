@@ -1,3 +1,4 @@
+import langchain
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts import FewShotPromptTemplate
 from langchain.chains import LLMChain
@@ -86,7 +87,7 @@ If there are no notable claims in the text, return: "No notable claims found." D
 few_shot_claim_chain = LLMChain(llm=ollama_model, prompt=claim_parse_prompt)
 
 def extractClaimsLLM(passage: str):
-    response = few_shot_claim_chain.run(input=passage)    
+    response = few_shot_claim_chain.run(input=passage)
     print("raw response " + response)
     return llmResponseToStruct(response)
 
@@ -94,14 +95,14 @@ def llmResponseToStruct(text):
     # Define the regex pattern
     patternE = r'(?<=Excerpt:)\s*\'(.*?)\'(?=\s*Restatement:)'
     patternR = r'(?<=Restatement:)(.*?)(?=\s*Excerpt:|$)'
-    
+
     # Find all matches using re.findall
-    excerpt_matches = re.findall(patternE, text, re.DOTALL)  
-    restatement_matches = re.findall(patternR, text, re.DOTALL) 
-    
+    excerpt_matches = re.findall(patternE, text, re.DOTALL)
+    restatement_matches = re.findall(patternR, text, re.DOTALL)
+
     if (len(excerpt_matches) != len(restatement_matches)):
         print("ERROR: Mismatch in assertion v claim count")
-        throw(" Mismatch in assertion v claim count, failure parsing passage")
+        raise(" Mismatch in assertion v claim count, failure parsing passage")
 
     # Store the matches in a list of dictionaries
     result = [{"excerpt": excerpt_matches[i].strip(), "claim": restatement_matches[i].strip()} for i in range(len(excerpt_matches))]
