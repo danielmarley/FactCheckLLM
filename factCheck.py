@@ -1,23 +1,25 @@
+from apiCalls import fetch_article_content, fetch_factcheck_articles, fetch_news_articles
+
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts import FewShotPromptTemplate
 from langchain.chains import LLMChain
-# from langchain.llms import Ollama
 from langchain_community.llms import Ollama
+from langchain._api import LangChainDeprecationWarning
 import requests
 import asyncio
-import aiohttp
 import nest_asyncio
-from playwright.async_api import async_playwright
-from bs4 import BeautifulSoup
-import nest_asyncio
-import asyncio
-import aiohttp
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 import nltk
 from nltk.tokenize import sent_tokenize
 import nltk
 import re
-import urllib.parse
+import random
+
+import warnings
+
+# Suppress specific warnings
+warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+warnings.filterwarnings("ignore", category=LangChainDeprecationWarning)
 
 nltk.download('punkt')
 nest_asyncio.apply()
@@ -29,111 +31,61 @@ OLLAMA_HOST = "http://host.docker.internal:11434" # for when running within dock
 
 default_model = Ollama(model=OLLAMA_DEFAULT_MODEL, base_url=OLLAMA_HOST)
 
-async def fetch_article_content(url):
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                response.raise_for_status()
-                return await response.text()
-    except Exception as e:
-        print(f"Error fetching article content from {url}: {e}")
-        return ""
-
-async def factcheck_parser(claim):
-    claim = urllib.parse.quote(claim)
-    url = f"https://www.factcheck.org/search/#gsc.tab=0&gsc.q={claim}&gsc.sort="
-    print(url)
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)  # Launch browser in headless mode
-        context = await browser.new_context()
-        page = await context.new_page()
-        await page.goto(url)
-        await page.wait_for_timeout(5000)  # Wait for the page to load
-
-        articles = await page.query_selector_all('div.gs-webResult.gs-result')
-        results = []
-
-        for article in articles:
-            title_tag = await article.query_selector('a.gs-title')
-            if title_tag:
-                title = await title_tag.inner_text()
-                link = await title_tag.get_attribute('href')
-                results.append({'title': title.strip(), 'url': link})
-
-        await browser.close()
-        return results
-
-async def retrieve_articles(claim):
-    articles = []
-    articles.extend(await factcheck_parser(claim))
-    return articles
-
-# work in prograss: If no articles were found in any of the three datasets, then use
-# newsAPI to try to find articles about the claim
-def fetch_news_articles(claim):
-    # claim is a space-seperated string.
-    url = (
-        'http://newsapi.org/v2/everything?'
-        f'q={claim}&'
-        'language=en&'
-        'sortBy=relevancy&'
-        'pageSize=30&'
-        'apiKey=4ac92a95346643fdbdb26a7e4d0e98b1'
-    )
-
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Throw an error for bad responses
-        news_data = response.json()
-        print(news_data)
-        return news_data.get('articles', [])
-    except Exception as e:
-        print(f"Error fetching news articles: {e}")
-        return []
-
 async def generate_context_and_assess_claim(claim, context, model):
     if (model == None):
         model = default_model
         
     # Fetch news articles related to the claim
     if context == "":
-      news_articles = await retrieve_articles(claim)
-      print("FactCheck Articles:", news_articles)
+        # Fetch both fact check sources and raw news
+        fc_articles_promise = fetch_factcheck_articles(claim)
+        news_articles_promise = fetch_news_articles(claim)
+        
+        news_articles = await fc_articles_promise;
+        print("FactCheck Articles:", news_articles)
+        
+        news_articles += await news_articles_promise
+        print("News Articles:", news_articles)
 
-      # Combine articles from sources. still to do
-      news_articles += fetch_news_articles(claim)
-      print("News Articles:", news_articles)
+        if news_articles:
+            # Limit to top 5 articles
+            top_articles = []
+            if len(news_articles) <= 3:
+                top_articles = news_articles;
+            else:
+                top_articles = random.sample(news_articles, 3)
 
-      if news_articles:
-          # Limit to top 3 articles
-          top_articles = news_articles[:3]
+            context += " Here are some recent summaries that provide context:\n"
+            for article in top_articles:
+                title = article['title']
+                url = article['url']
 
-          context += " Here are some recent summaries that provide context:\n"
-          for article in top_articles:
-              title = article['title']
-              url = article['url']
+                # Get the article content
+                full_content = await fetch_article_content(url)
+                description = article.get('description')
 
-              # Get the article content
-              full_content = await fetch_article_content(url)
-              description = article.get('description')
+                if not description:
+                    if full_content:
+                        soup = BeautifulSoup(full_content, 'html.parser')
+                        first_paragraph = soup.find('p')
+                        description = first_paragraph.get_text(strip=True) if first_paragraph else 'No content available.'
 
-              if not description:
-                  if full_content:
-                      soup = BeautifulSoup(full_content, 'html.parser')
-                      first_paragraph = soup.find('p')
-                      description = first_paragraph.get_text(strip=True) if first_paragraph else 'No content available.'
+                    else:
+                        description = 'No content available.'
 
-                  else:
-                      description = 'No content available.'
-
-              article_context = f"- **{title}**: {description[:500]}... [Read more]({url})\n"  # Truncate to 500 chars
-              context += article_context
+                article_context = f"- **{title}**: {description[:500]}... [Read more]({url})\n"  # Truncate to 500 chars
+                context += article_context
 
     context_template = f"""
     You are an assistant that provides factual information.
     Analyze the following claim: '{claim}'.
     Context: {context}
-    1. State if it is true, false, mostly true, mostly false, or not enough evidence to make a decision.
+    1. State if it is True, Mostly True, Mostly False, False, or Not Enough Evidence to make a decision, inline with the following:
+        * TRUE – The statement is accurate and there’s nothing significant missing.
+        * MOSTLY TRUE – The statement is accurate but needs clarification or additional information.
+        * MOSTLY FALSE – The statement contains an element of truth but ignores critical facts that would give a different impression.
+        * FALSE – The statement is not accurate.
+        * NOT ENOUGH EVIDENCE - You do not have the adequate information to judge if a statement is true or false.
     2. Provide relevant context or background information.
     3. List key facts and evidence related to this claim.
     4. Mention opposing views or evidence.
@@ -161,9 +113,8 @@ async def claimFeedback(claim, context, userFeedback):
 
 async def factCheckSingleClaim(claim, model=None):
     context = ""
+    print("CLAIM: " + claim)
     result, context = await generate_context_and_assess_claim(claim, context, model)
-    print("\n\nRESULT: \n\n")
-    print(result)
     pattern = r"\b(Mostly True|Mostly False|True|False|Not Enough Evidence)\b"
     match = re.search(pattern, result, re.IGNORECASE)
     label = "Unsupported"
@@ -179,7 +130,12 @@ async def factCheckSingleClaimNoContext(claim, model=None):
     context_template = f"""
     You are an assistant that provides factual information.
     Analyze the following claim: '{claim}'.
-    1. State if it is true, false, mostly true, mostly false, or not enough evidence to make a decision.
+    1. State if it is True, Mostly True, Mostly False, False, or Not Enough Evidence to make a decision, inline with the following:
+        * TRUE – The statement is accurate and there’s nothing significant missing.
+        * MOSTLY TRUE – The statement is accurate but needs clarification or additional information.
+        * MOSTLY FALSE – The statement contains an element of truth but ignores critical facts that would give a different impression.
+        * FALSE – The statement is not accurate.
+        * NOT ENOUGH EVIDENCE - You do not have the adequate information to judge if a statement is true or false.
     2. Provide relevant context or background information.
     3. List key facts and evidence related to this claim.
     4. Mention opposing views or evidence.
