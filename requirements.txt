@@ -7,3 +7,7 @@ fuzzywuzzy
 nltk
 fastapi
 uvicorn
+scikit-learn
+pandas
+matplotlib
+numpy
