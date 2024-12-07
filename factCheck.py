@@ -1,4 +1,4 @@
-from apiCalls import fetch_article_content, fetch_factcheck_articles, fetch_news_articles
+from apiCalls import fetch_article_content, fetch_factcheck_articles, fetch_news_articles, fetch_snopes_articles, fetch_politiFact_articles
 
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts import FewShotPromptTemplate
@@ -37,11 +37,11 @@ async def generate_context_and_assess_claim(claim, context, model):
 
     # Fetch news articles related to the claim
     if context == "":
-        # Fetch both fact check sources and raw news
-        fc_articles_promise = fetch_factcheck_articles(claim)
-        news_articles_promise = fetch_news_articles(claim)
-        snopes_articles_promise = fetch_snopes_articles(claim)
-        politiFact_articles_promise = fetch_politiFact_articles(claim)
+        # Fetch both fact check sources and raw news; keep top two results from each
+        fc_articles_promise = fetch_factcheck_articles(claim, 2)
+        news_articles_promise = fetch_news_articles(claim, 2)
+        snopes_articles_promise = fetch_snopes_articles(claim, 2)
+        politiFact_articles_promise = fetch_politiFact_articles(claim, 2)
 
         news_articles = await fc_articles_promise;
         print("FactCheck Articles:", news_articles)
@@ -56,15 +56,8 @@ async def generate_context_and_assess_claim(claim, context, model):
         print("Politifact Articles:", news_articles)
 
         if news_articles:
-            # Limit to top 5 articles
-            top_articles = []
-            if len(news_articles) <= 3:
-                top_articles = news_articles;
-            else:
-                top_articles = random.sample(news_articles, 3)
-
             context += " Here are some recent summaries that provide context:\n"
-            for article in top_articles:
+            for article in news_articles:
                 title = article['title']
                 url = article['url']
 

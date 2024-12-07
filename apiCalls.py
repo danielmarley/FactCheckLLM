@@ -59,18 +59,23 @@ def call_news_api(claim):
     print("All API keys exhausted or failed.")
     return []
 
-async def fetch_news_articles(claim):
+async def fetch_news_articles(claim, maxNumber=100):
     """Get articles for a claim, using a local file cache to avoid rate limits."""
     file_path = get_cached_file_path('cache/news', claim)
 
+    articles = []
     if os.path.exists(file_path):
         # print("Cache hit. Loading data from file.")
-        return read_cached_data(file_path)
-
-    print("Cache miss. Fetching data from API.")
-    articles = call_news_api(claim)
-    write_to_cache(file_path, articles)
-    return articles
+        articles = read_cached_data(file_path)
+    else:
+        print("Cache miss. Fetching data from API.")
+        articles = call_news_api(claim)
+        write_to_cache(file_path, articles)
+        
+    if (len(articles) > maxNumber):
+        return articles[0:maxNumber]
+    else:
+        return articles
 
 async def factcheck_parser(claim):
     """Fetch fact-checking articles for a claim using a browser and cache results."""
@@ -107,10 +112,14 @@ async def factcheck_parser(claim):
         write_to_cache(file_path, results)
         return results
 
-async def fetch_factcheck_articles(claim):
+async def fetch_factcheck_articles(claim, maxNumber=100):
     articles = []
     articles.extend(await factcheck_parser(claim))
-    return articles
+    
+    if (len(articles) > maxNumber):
+        return articles[0:maxNumber]
+    else:
+        return articles
 
 async def snopes_parser(claim):
     """Fetch snopes articles for a claim using a browser and cache results."""
@@ -143,7 +152,8 @@ async def snopes_parser(claim):
             # Extract the link (href attribute from <a> tag)
             link = await title_element.get_attribute('href') if title_element else "No link"
 
-            articles.append({'title': title, 'link': link})
+            if (title_element != "No title" and link != "No link"):
+                articles.append({'title': title, 'url': link})
 
         # Close the browser after scraping
         await browser.close()
@@ -151,10 +161,17 @@ async def snopes_parser(claim):
     write_to_cache(file_path, articles)
     return articles
 
-async def fetch_snopes_articles(claim):
+async def fetch_snopes_articles(claim, maxNumber=100):
     articles = []
-    articles.extend(await snopes_parser(claim))
-    return articles
+    try:
+        articles.extend(await snopes_parser(claim))
+    except Exception as e:
+        print(f"Error calling snopes, skipping: {e}")
+    
+    if (len(articles) > maxNumber):
+        return articles[0:maxNumber]
+    else:
+        return articles
 
 async def parse_politiFact(claim):
     """Fetch Politifact articles for a claim using a browser and cache results."""
@@ -187,8 +204,9 @@ async def parse_politiFact(claim):
             # Extract the link (href attribute from <a> tag inside c-textgroup__title)
             link = await title_element.get_attribute('href') if title_element else "No link"
             link = f"https://www.politifact.com{link}" if link != "No link" else link  # Ensure absolute URL
-
-            articles.append({'title': title, 'link': link})
+            
+            if (title != "No title" and link != "No link"):
+                articles.append({'title': title, 'url': link})
 
         # Close the browser after scraping
         await browser.close()
@@ -198,18 +216,31 @@ async def parse_politiFact(claim):
 
     return articles
 
-async def fetch_politiFact_articles(claim):
-    articles = []
-    articles.extend(await parse_politiFact(claim))
-    return articles
+async def fetch_politiFact_articles(claim, maxNumber=100):
+    articles = []    
+    try:
+        articles.extend(await parse_politiFact(claim))
+    except Exception as e:
+        print(f"Error calling snopes, skipping: {e}")
+    
+    if (len(articles) > maxNumber):
+        return articles[0:maxNumber]
+    else:
+        return articles
 
 
 async def fetch_article_content(url):
+    file_path = get_cached_file_path('cache/article', url)
+    if os.path.exists(file_path):
+        return read_cached_data(file_path)
+    
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 response.raise_for_status()
-                return await response.text()
+                responseText = await response.text()
+                write_to_cache(file_path, responseText)
+                return responseText
     except Exception as e:
         print(f"Error fetching article content from {url}: {e}")
         return ""
