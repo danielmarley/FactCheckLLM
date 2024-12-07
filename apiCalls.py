@@ -156,6 +156,53 @@ async def fetch_snopes_articles(claim):
     articles.extend(await snopes_parser(claim))
     return articles
 
+async def parse_politiFact(claim):
+    """Fetch Politifact articles for a claim using a browser and cache results."""
+    file_path = get_cached_file_path('cache/politifact', claim)
+
+    if os.path.exists(file_path):
+        return read_cached_data(file_path)
+
+    print("Cache miss. Fetching data from website.")
+    claim = urllib.parse.quote(claim)
+    url = f"https://www.politifact.com/search/?q={claim}"
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)  # Launch browser in headless mode
+        context = await browser.new_context()
+        page = await context.new_page()
+        await page.goto(url)
+        await page.wait_for_timeout(5000)
+
+        # Query for all article elements on the page
+        article_elements = await page.query_selector_all('div.o-listease__item')
+        print(f"Found {len(article_elements)} articles")
+
+        articles = []
+        for element in article_elements:
+            # Extract the title (inside <div class="c-textgroup__title">)
+            title_element = await element.query_selector('div.c-textgroup__title a')  # Corrected selector for title
+            title = await title_element.inner_text() if title_element else "No title"
+
+            # Extract the link (href attribute from <a> tag inside c-textgroup__title)
+            link = await title_element.get_attribute('href') if title_element else "No link"
+            link = f"https://www.politifact.com{link}" if link != "No link" else link  # Ensure absolute URL
+
+            articles.append({'title': title, 'link': link})
+
+        # Close the browser after scraping
+        await browser.close()
+
+    # Optionally, cache the results
+    write_to_cache(file_path, articles)
+
+    return articles
+
+async def fetch_politiFact_articles(claim):
+    articles = []
+    articles.extend(await parse_politiFact(claim))
+    return articles
+
 
 async def fetch_article_content(url):
     try:

@@ -41,6 +41,7 @@ async def generate_context_and_assess_claim(claim, context, model):
         fc_articles_promise = fetch_factcheck_articles(claim)
         news_articles_promise = fetch_news_articles(claim)
         snopes_articles_promise = fetch_snopes_articles(claim)
+        politiFact_articles_promise = fetch_politiFact_articles(claim)
 
         news_articles = await fc_articles_promise;
         print("FactCheck Articles:", news_articles)
@@ -50,6 +51,9 @@ async def generate_context_and_assess_claim(claim, context, model):
 
         news_articles += await snopes_articles_promise
         print("Snopes Articles:", news_articles)
+
+        news_articles += await politiFact_articles_promise
+        print("Politifact Articles:", news_articles)
 
         if news_articles:
             # Limit to top 5 articles
