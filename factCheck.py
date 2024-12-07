@@ -34,18 +34,22 @@ default_model = Ollama(model=OLLAMA_DEFAULT_MODEL, base_url=OLLAMA_HOST)
 async def generate_context_and_assess_claim(claim, context, model):
     if (model == None):
         model = default_model
-        
+
     # Fetch news articles related to the claim
     if context == "":
         # Fetch both fact check sources and raw news
         fc_articles_promise = fetch_factcheck_articles(claim)
         news_articles_promise = fetch_news_articles(claim)
-        
+        snopes_articles_promise = fetch_snopes_articles(claim)
+
         news_articles = await fc_articles_promise;
         print("FactCheck Articles:", news_articles)
-        
+
         news_articles += await news_articles_promise
         print("News Articles:", news_articles)
+
+        news_articles += await snopes_articles_promise
+        print("Snopes Articles:", news_articles)
 
         if news_articles:
             # Limit to top 5 articles

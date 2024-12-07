@@ -35,7 +35,7 @@ def call_news_api(claim):
         'sortBy=relevancy&'
         'pageSize=30&'
     )
-    
+
     api_keys = ['4ac92a95346643fdbdb26a7e4d0e98b1',
                 'af7f73cc8e7e43cc9d388c354ff270d6',
                 '4c7b8c1f8c4349d3b7e9a0bc3995b066',
@@ -66,7 +66,7 @@ async def fetch_news_articles(claim):
     if os.path.exists(file_path):
         # print("Cache hit. Loading data from file.")
         return read_cached_data(file_path)
-    
+
     print("Cache miss. Fetching data from API.")
     articles = call_news_api(claim)
     write_to_cache(file_path, articles)
@@ -110,6 +110,50 @@ async def factcheck_parser(claim):
 async def fetch_factcheck_articles(claim):
     articles = []
     articles.extend(await factcheck_parser(claim))
+    return articles
+
+async def snopes_parser(claim):
+    """Fetch snopes articles for a claim using a browser and cache results."""
+    file_path = get_cached_file_path('cache/snopes', claim)
+
+    if os.path.exists(file_path):
+        return read_cached_data(file_path)
+
+    print("Cache miss. Fetching data from website.")
+    claim = urllib.parse.quote(claim)
+    url = f"https://www.snopes.com/search/?#gsc.tab=0&gsc.page=1&gsc.q={claim}"
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)  # Launch browser in headless mode
+        context = await browser.new_context()
+        page = await context.new_page()
+        await page.goto(url)
+        await page.wait_for_timeout(5000)
+
+        # Query for all article elements on the page
+        article_elements = await page.query_selector_all('div.gs-webResult.gs-result')
+        print(f"Found {len(article_elements)} articles")
+
+        articles = []
+        for element in article_elements:
+            # Extract the title (inside <a class="gs-title">)
+            title_element = await element.query_selector('a.gs-title')
+            title = await title_element.inner_text() if title_element else "No title"
+
+            # Extract the link (href attribute from <a> tag)
+            link = await title_element.get_attribute('href') if title_element else "No link"
+
+            articles.append({'title': title, 'link': link})
+
+        # Close the browser after scraping
+        await browser.close()
+
+    write_to_cache(file_path, articles)
+    return articles
+
+async def fetch_snopes_articles(claim):
+    articles = []
+    articles.extend(await snopes_parser(claim))
     return articles
 
 
