@@ -4,8 +4,8 @@ import json
 import requests
 import urllib.parse
 from playwright.async_api import async_playwright
+import traceback
 import aiohttp
-
 import hashlib
 
 def hash_string(input_string):
@@ -235,6 +235,9 @@ async def fetch_politiFact_articles(claim, maxNumber=100):
 
 
 async def fetch_article_content(url):
+    if url == None:
+        return ""
+    print(url)
     file_path = get_cached_file_path('cache/article', url)
     if os.path.exists(file_path):
         return read_cached_data(file_path)
@@ -248,4 +251,6 @@ async def fetch_article_content(url):
                 return responseText
     except Exception as e:
         print(f"Error fetching article content from {url}: {e}")
+        print("Stack trace:")
+        traceback.print_exc()
         return ""
