@@ -110,7 +110,7 @@ async def factcheck_parser(claim):
             if title_tag:
                 title = await title_tag.inner_text()
                 link = await title_tag.get_attribute('href')
-                if title.strip() != '':
+                if title.strip() != '' and link.strip() != '':
                     results.append({'title': title.strip(), 'url': link})
 
         await browser.close()
@@ -157,7 +157,7 @@ async def snopes_parser(claim):
             # Extract the link (href attribute from <a> tag)
             link = await title_element.get_attribute('href') if title_element else "No link"
 
-            if (title_element != "No title" and link != "No link"):
+            if (title != "No title" and title.strip() != '' and link != "No link" and link != None):
                 articles.append({'title': title, 'url': link})
 
         # Close the browser after scraping
@@ -210,7 +210,7 @@ async def parse_politiFact(claim):
             link = await title_element.get_attribute('href') if title_element else "No link"
             link = f"https://www.politifact.com{link}" if link != "No link" else link  # Ensure absolute URL
             
-            if (title != "No title" and link != "No link"):
+            if (title != "No title" and title.strip() != '' and link != "No link" and link != None):
                 articles.append({'title': title, 'url': link})
 
         # Close the browser after scraping
