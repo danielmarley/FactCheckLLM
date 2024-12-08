@@ -6,9 +6,14 @@ import urllib.parse
 from playwright.async_api import async_playwright
 import aiohttp
 
+import hashlib
+
 def hash_string(input_string):
     """Generate a unique hash for a given string."""
+    if input_string is None:
+        input_string = "" 
     return hashlib.sha256(input_string.encode('utf-8')).hexdigest()
+
 
 def get_cached_file_path(cache_dir, claim):
     """Return the file path for a cached claim."""
