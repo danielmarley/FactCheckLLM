@@ -119,6 +119,7 @@ function processPassageResponse(excerptsWithClaims) {
     // Error case where text cannot be found on page (LLM can change a word in the excerpt occassionally as an error)
     // Simply skip this excerpt
     if (claimDiv == undefined || claimDiv[0] == undefined){
+      console.warn("Could not find claim excerpt: " + excerpt )
       return;
     }
     
@@ -141,18 +142,19 @@ function processPassageResponse(excerptsWithClaims) {
     const claimIndexes = parentIndexToClaimsMap[divIndex];
 
     const uuids = []
-    for (var idx in claimIndexes) {
+    claimIndexes.forEach(idx => {
       const { excerpt, claim, context, label, reply } = excerptsWithClaims[idx];
       const claimClass = getClaimClass(label);
       const claimId = String(Math.floor(Math.random() * 1000000));
       const highlightHTML = `
         <span id='${claimId}' class="claim ${claimClass}" data-label="${label}">
-          ${excerpt}
+          ${normalizeQuotes(excerpt)}
         </span>
       `;
-      replacementContent = replacementContent.replace(excerpt, highlightHTML)
+      let regexReplace = new RegExp(escapeRegExp(normalizeQuotes(excerpt)), "gi");
+      replacementContent = replacementContent.replace(regexReplace, highlightHTML)
       uuids.push(claimId);
-    }
+    });
     const $excerptDiv = $(excerptDiv);
     $excerptDiv.attr('data-factcheckuntouched', textContent)
     $excerptDiv.html(replacementContent);
@@ -161,7 +163,7 @@ function processPassageResponse(excerptsWithClaims) {
       const claimId = uuids[idx];
       const { excerpt, claim, context, label, reply } = excerptsWithClaims[element];
       $(`#${claimId}`).data('reply', reply)
-        .data('excerpt', excerpt)
+        .data('excerpt', normalizeQuotes(excerpt))
         .data('claim', claim)
         .data('context', context);
     });
@@ -203,6 +205,10 @@ function processPassageResponse(excerptsWithClaims) {
 
 function normalizeQuotes(input) {
   return input.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
+}
+
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^=!:${}()|\[\]\/\\]/g, "\\$&");
 }
 
 // Function to position the tooltip
