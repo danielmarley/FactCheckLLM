@@ -10,6 +10,7 @@
 * Check that ollama service is running by executing `ollama serve`
     * If already running you'll see an error that the port 11434 is in use
 * Execute `ollama pull llama3` and `ollama pull llama3.2` to pull Llama7B and Llama3B respectively
+* Run Ollama serve
 
 #### 2) Build and run the docker image
 The docker image is used to execute jupyter notebook in a Linux environment. It executes as root and installs the playwright packages needed as root as part of the build. Assuming you have docker already installed and docker service is running, then from within the project dir:
