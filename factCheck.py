@@ -114,7 +114,7 @@ async def claimFeedback(claim, context, userFeedback):
     new_response, context = await generate_context_and_assess_claim(claim, context, None)
     pattern = r"\b(Mostly True|Mostly False|True|False|Not Enough Evidence)\b"
     match = re.search(pattern, new_response, re.IGNORECASE)
-    label = "Unsupported"
+    label = "Not Enough Evidence"
     if match:
         label = match.group(0)  # Return the matched label
     return { "reply": new_response, "label": label, "context": context }
@@ -126,7 +126,7 @@ async def factCheckSingleClaim(claim, model=None, limited=False):
     result, context = await generate_context_and_assess_claim(claim, context, model, limited)
     pattern = r"\b(Mostly True|Mostly False|True|False|Not Enough Evidence)\b"
     match = re.search(pattern, result, re.IGNORECASE)
-    label = "Unsupported"
+    label = "Not Enough Evidence"
     if match:
         label = match.group(0)  # Return the matched label
     return { "reply": result, "label": label, "context": context }
