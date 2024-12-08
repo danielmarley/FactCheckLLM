@@ -31,17 +31,20 @@ OLLAMA_HOST = "http://host.docker.internal:11434" # for when running within dock
 
 default_model = Ollama(model=OLLAMA_DEFAULT_MODEL, base_url=OLLAMA_HOST)
 
-async def generate_context_and_assess_claim(claim, context, model):
+async def generate_context_and_assess_claim(claim, context, model, limited=False):
     if (model == None):
         model = default_model
 
     # Fetch news articles related to the claim
     if context == "":
+        source_count = 3 if limited else 2;
+        
         # Fetch both fact check sources and raw news; keep top two results from each
-        fc_articles_promise = fetch_factcheck_articles(claim, 2)
-        news_articles_promise = fetch_news_articles(claim, 2)
-        snopes_articles_promise = fetch_snopes_articles(claim, 2)
-        politiFact_articles_promise = fetch_politiFact_articles(claim, 2)
+        fc_articles_promise = fetch_factcheck_articles(claim, source_count)
+        news_articles_promise = fetch_news_articles(claim, source_count)
+        if (not limited):
+            snopes_articles_promise = fetch_snopes_articles(claim, source_count)
+            politiFact_articles_promise = fetch_politiFact_articles(claim, source_count)
 
         news_articles = await fc_articles_promise;
         print("FactCheck Articles:", news_articles)
@@ -49,20 +52,25 @@ async def generate_context_and_assess_claim(claim, context, model):
         news_articles += await news_articles_promise
         print("News Articles:", news_articles)
 
-        news_articles += await snopes_articles_promise
-        print("Snopes Articles:", news_articles)
-
-        news_articles += await politiFact_articles_promise
-        print("Politifact Articles:", news_articles)
+        if (not limited):
+            news_articles += await snopes_articles_promise
+            print("Snopes Articles:", news_articles)
+            news_articles += await politiFact_articles_promise
+            print("Politifact Articles:", news_articles)
 
         if news_articles:
             context += " Here are some recent summaries that provide context:\n"
+            
+            content_promises = []
             for article in news_articles:
+                content_promises.append(fetch_article_content(article['url']))
+                
+            for index, article in enumerate(news_articles):
                 title = article['title']
                 url = article['url']
 
                 # Get the article content
-                full_content = await fetch_article_content(url)
+                full_content = await content_promises[index]
                 description = article.get('description')
 
                 if not description:
@@ -112,10 +120,10 @@ async def claimFeedback(claim, context, userFeedback):
     return { "reply": new_response, "label": label, "context": context }
 
 
-async def factCheckSingleClaim(claim, model=None):
+async def factCheckSingleClaim(claim, model=None, limited=False):
     context = ""
     print("CLAIM: " + claim)
-    result, context = await generate_context_and_assess_claim(claim, context, model)
+    result, context = await generate_context_and_assess_claim(claim, context, model, limited)
     pattern = r"\b(Mostly True|Mostly False|True|False|Not Enough Evidence)\b"
     match = re.search(pattern, result, re.IGNORECASE)
     label = "Unsupported"
