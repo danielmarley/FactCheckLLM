@@ -141,7 +141,7 @@ async def snopes_parser(claim):
         browser = await p.chromium.launch(headless=True)  # Launch browser in headless mode
         context = await browser.new_context()
         page = await context.new_page()
-        await page.goto(url)
+        await page.goto(url, timeout=5000)
         await page.wait_for_timeout(5000)
 
         # Query for all article elements on the page
@@ -193,7 +193,7 @@ async def parse_politiFact(claim):
         browser = await p.chromium.launch(headless=True)  # Launch browser in headless mode
         context = await browser.new_context()
         page = await context.new_page()
-        await page.goto(url)
+        await page.goto(url, timeout=5000)
         await page.wait_for_timeout(5000)
 
         # Query for all article elements on the page
@@ -226,7 +226,7 @@ async def fetch_politiFact_articles(claim, maxNumber=100):
     try:
         articles.extend(await parse_politiFact(claim))
     except Exception as e:
-        print(f"Error calling snopes, skipping: {e}")
+        print(f"Error calling politifact, skipping: {e}")
     
     if (len(articles) > maxNumber):
         return articles[0:maxNumber]

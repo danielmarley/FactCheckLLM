@@ -95,6 +95,11 @@ function submitPassageRequest(selectionText) {
   })
 }
 
+// Add a custom case-insensitive contains selector
+jQuery.expr[':'].icontains = function(elem, index, match) {
+  return jQuery(elem).text().toLowerCase().indexOf(match[3].toLowerCase()) >= 0;
+};
+
 // Process new passage request for LLM API
 function processPassageResponse(excerptsWithClaims) {
   resetPage();
@@ -105,11 +110,17 @@ function processPassageResponse(excerptsWithClaims) {
   // Create map for parentDiv to claim indexes
   excerptsWithClaims.forEach((item, itemIndex) => {
     const { excerpt } = item;
-    const claimDiv = $(`*:contains("${excerpt}")`) // TODO handle nbsp
+    const claimDiv = $(`*:icontains(${normalizeQuotes(excerpt)})`) // TODO handle nbsp
       .not('script')
       .not('head')
       .not('link')
       .last();
+
+    // Error case where text cannot be found on page (LLM can change a word in the excerpt occassionally as an error)
+    // Simply skip this excerpt
+    if (claimDiv == undefined || claimDiv[0] == undefined){
+      return;
+    }
     
     if (parentDivs.includes(claimDiv[0])){
       let key = parentDivs.indexOf(claimDiv[0])
@@ -188,6 +199,10 @@ function processPassageResponse(excerptsWithClaims) {
       const $tooltip = $('#tooltip');
       positionTooltip(event, $tooltip, true);
   });
+}
+
+function normalizeQuotes(input) {
+  return input.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
 }
 
 // Function to position the tooltip
