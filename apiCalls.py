@@ -4,11 +4,16 @@ import json
 import requests
 import urllib.parse
 from playwright.async_api import async_playwright
+import traceback
 import aiohttp
+import hashlib
 
 def hash_string(input_string):
     """Generate a unique hash for a given string."""
+    if input_string is None:
+        input_string = "" 
     return hashlib.sha256(input_string.encode('utf-8')).hexdigest()
+
 
 def get_cached_file_path(cache_dir, claim):
     """Return the file path for a cached claim."""
@@ -105,7 +110,7 @@ async def factcheck_parser(claim):
             if title_tag:
                 title = await title_tag.inner_text()
                 link = await title_tag.get_attribute('href')
-                if title.strip() != '':
+                if title.strip() != '' and link.strip() != '':
                     results.append({'title': title.strip(), 'url': link})
 
         await browser.close()
@@ -152,7 +157,7 @@ async def snopes_parser(claim):
             # Extract the link (href attribute from <a> tag)
             link = await title_element.get_attribute('href') if title_element else "No link"
 
-            if (title_element != "No title" and link != "No link"):
+            if (title != "No title" and title.strip() != '' and link != "No link" and link != None):
                 articles.append({'title': title, 'url': link})
 
         # Close the browser after scraping
@@ -205,7 +210,7 @@ async def parse_politiFact(claim):
             link = await title_element.get_attribute('href') if title_element else "No link"
             link = f"https://www.politifact.com{link}" if link != "No link" else link  # Ensure absolute URL
             
-            if (title != "No title" and link != "No link"):
+            if (title != "No title" and title.strip() != '' and link != "No link" and link != None):
                 articles.append({'title': title, 'url': link})
 
         # Close the browser after scraping
@@ -230,6 +235,9 @@ async def fetch_politiFact_articles(claim, maxNumber=100):
 
 
 async def fetch_article_content(url):
+    if url == None:
+        return ""
+    print(url)
     file_path = get_cached_file_path('cache/article', url)
     if os.path.exists(file_path):
         return read_cached_data(file_path)
@@ -243,4 +251,6 @@ async def fetch_article_content(url):
                 return responseText
     except Exception as e:
         print(f"Error fetching article content from {url}: {e}")
+        print("Stack trace:")
+        traceback.print_exc()
         return ""
