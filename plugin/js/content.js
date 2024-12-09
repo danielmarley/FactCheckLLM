@@ -111,8 +111,8 @@ function processPassageResponse(excerptsWithClaims) {
   // Get all divs that contain excerpts
   // Create map for parentDiv to claim indexes
   excerptsWithClaims.forEach((item, itemIndex) => {
-    const { excerpt } = item;
-    const claimDiv = $(`*:icontains(${excerpt})`) // TODO handle nbsp
+    let { excerpt } = item;
+    let claimDiv = $(`*:icontains(${excerpt})`) // TODO handle nbsp
       .not('script')
       .not('head')
       .not('link')
@@ -121,8 +121,16 @@ function processPassageResponse(excerptsWithClaims) {
     // Error case where text cannot be found on page (LLM can change a word in the excerpt occassionally as an error)
     // Simply skip this excerpt
     if (claimDiv == undefined || claimDiv[0] == undefined){
-      console.warn("Could not find claim excerpt: " + excerpt )
-      return;
+      excerpt = normalizeQuotes(excerpt);
+      claimDiv = $(`*:icontains(${excerpt})`) // TODO handle nbsp
+        .not('script')
+        .not('head')
+        .not('link')
+        .last();
+        if (claimDiv == undefined || claimDiv[0] == undefined){
+          console.warn("Could not find claim excerpt: " + excerpt )
+          return;
+        }
     }
     
     if (parentDivs.includes(claimDiv[0])){
@@ -139,7 +147,7 @@ function processPassageResponse(excerptsWithClaims) {
   // Per containing div, perform all text replacements in batch
   parentDivs.forEach((excerptDiv, divIndex) => {
     const textContent = excerptDiv.textContent;
-    let replacementContent = textContent; //textContent.replaceAll(String.fromCharCode([160]), ' ');
+    let replacementContent = normalizeQuotes(textContent); //textContent.replaceAll(String.fromCharCode([160]), ' ');
 
     const claimIndexes = parentIndexToClaimsMap[divIndex];
 
@@ -153,7 +161,7 @@ function processPassageResponse(excerptsWithClaims) {
           ${excerpt}
         </span>
       `;
-      let regexReplace = new RegExp(escapeRegExp(excerpt), "gi");
+      let regexReplace = new RegExp(escapeRegExp(normalizeQuotes(excerpt)), "gi");
       replacementContent = replacementContent.replace(regexReplace, highlightHTML)
       uuids.push(claimId);
     });
@@ -205,9 +213,9 @@ function processPassageResponse(excerptsWithClaims) {
   });
 }
 
-// function normalizeQuotes(input) {
-//   return input.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
-// }
+function normalizeQuotes(input) {
+  return input.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
+}
 
 function escapeRegExp(str) {
   return str.replace(/[.*+?^=!:${}()|\[\]\/\\]/g, "\\$&");
