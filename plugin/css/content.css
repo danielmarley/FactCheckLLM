@@ -168,18 +168,24 @@
 
 .claim.fcllm-true, .fcllm-true {
   background-color: #69AF6D;
+  color: black;
 }
 
 .claim.fcllm-mostly-true, .fcllm-mostly-true {
   background-color: #84e7b9;
+  color: black;
+
 }
 
 .claim.fcllm-unsupported, .fcllm-unsupported {
   background-color: khaki;
+  color: black;
+
 }
 
 .claim.fcllm-mostly-false, .fcllm-mostly-false {
   background-color: #F7B2AD;
+  color: black;
 }
 
 .claim.fcllm-false, .fcllm-false {
