@@ -93,7 +93,7 @@ def extractClaimsLLM(passage: str):
 
 def llmResponseToStruct(text):
     # Define the regex pattern
-    patternE = r'(?<=Excerpt:)\s*\'(.*?)\'(?=\s*Restatement:)'
+    patternE = r'(?<=Excerpt:)\s*(.*?)(?=\s*Restatement:)'
     patternR = r'(?<=Restatement:)(.*?)(?=\s*Excerpt:|$)'
 
     # Find all matches using re.findall
@@ -103,6 +103,11 @@ def llmResponseToStruct(text):
     if (len(excerpt_matches) != len(restatement_matches)):
         print("ERROR: Mismatch in assertion v claim count")
         raise(" Mismatch in assertion v claim count, failure parsing passage")
+
+    for i in range(len(excerpt_matches)):
+        e = excerpt_matches[i].strip()
+        if (e.startswith("'") and e.endswith("'")):
+            excerpt_matches[i] = e[1:-1]
 
     # Store the matches in a list of dictionaries
     result = [{"excerpt": excerpt_matches[i].strip(), "claim": restatement_matches[i].strip()} for i in range(len(excerpt_matches))]

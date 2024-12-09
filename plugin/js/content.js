@@ -97,7 +97,9 @@ function submitPassageRequest(selectionText) {
 
 // Add a custom case-insensitive contains selector
 jQuery.expr[':'].icontains = function(elem, index, match) {
-  return jQuery(elem).text().toLowerCase().indexOf(match[3].toLowerCase()) >= 0;
+  let searchText = match[3].toLowerCase(); // Get the search term in lowercase
+  return jQuery(elem).text().toLowerCase().includes(searchText); // Perform case-insensitive matching
+  // return jQuery(elem).text().toLowerCase().indexOf(match[3].toLowerCase()) >= 0;
 };
 
 // Process new passage request for LLM API
@@ -110,7 +112,7 @@ function processPassageResponse(excerptsWithClaims) {
   // Create map for parentDiv to claim indexes
   excerptsWithClaims.forEach((item, itemIndex) => {
     const { excerpt } = item;
-    const claimDiv = $(`*:icontains(${normalizeQuotes(excerpt)})`) // TODO handle nbsp
+    const claimDiv = $(`*:icontains(${excerpt})`) // TODO handle nbsp
       .not('script')
       .not('head')
       .not('link')
@@ -148,10 +150,10 @@ function processPassageResponse(excerptsWithClaims) {
       const claimId = String(Math.floor(Math.random() * 1000000));
       const highlightHTML = `
         <span id='${claimId}' class="claim ${claimClass}" data-label="${label}">
-          ${normalizeQuotes(excerpt)}
+          ${excerpt}
         </span>
       `;
-      let regexReplace = new RegExp(escapeRegExp(normalizeQuotes(excerpt)), "gi");
+      let regexReplace = new RegExp(escapeRegExp(excerpt), "gi");
       replacementContent = replacementContent.replace(regexReplace, highlightHTML)
       uuids.push(claimId);
     });
@@ -163,7 +165,7 @@ function processPassageResponse(excerptsWithClaims) {
       const claimId = uuids[idx];
       const { excerpt, claim, context, label, reply } = excerptsWithClaims[element];
       $(`#${claimId}`).data('reply', reply)
-        .data('excerpt', normalizeQuotes(excerpt))
+        .data('excerpt', excerpt)
         .data('claim', claim)
         .data('context', context);
     });
@@ -203,9 +205,9 @@ function processPassageResponse(excerptsWithClaims) {
   });
 }
 
-function normalizeQuotes(input) {
-  return input.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
-}
+// function normalizeQuotes(input) {
+//   return input.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
+// }
 
 function escapeRegExp(str) {
   return str.replace(/[.*+?^=!:${}()|\[\]\/\\]/g, "\\$&");
